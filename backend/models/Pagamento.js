@@ -1,0 +1,30 @@
+module.exports = (sequelize, DataTypes) => {
+  return sequelize.define(
+    "Pagamento",
+    {
+      id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+      },
+      tipoServico: {
+        type: DataTypes.ENUM("matricula", "certificado", "propina"),
+        allowNull: false,
+        field: "tipo_servico",
+      },
+      valor: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
+      referencia: {
+        type: DataTypes.STRING(50),
+        unique: true,
+        allowNull: false,
+      },
+      status: { type: DataTypes.STRING(20), allowNull: false },
+      mesReferencia: { type: DataTypes.STRING(10), field: "mes_referencia" },
+      anoReferencia: { type: DataTypes.INTEGER, field: "ano_referencia" },
+      descricao: { type: DataTypes.TEXT },
+      urlCheckout: { type: DataTypes.STRING(255), field: "url_checkout" },
+      expiraEm: { type: DataTypes.DATE, field: "expira_em" },
+    },
+    { tableName: "pagamentos", updatedAt: false },
+  );
+};
