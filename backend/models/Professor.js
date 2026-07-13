@@ -8,6 +8,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         field: "nome_completo",
       },
+            // Nova coluna de segurança
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // Começa como 'visível' para todos
+        allowNull: false
+      },
       especialidade: { type: DataTypes.STRING(100) },
     },
     { tableName: "professores", timestamps: false },

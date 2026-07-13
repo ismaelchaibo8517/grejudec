@@ -18,8 +18,15 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         field: "ano_letivo",
       },
+            // Nova coluna de segurança
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // Começa como 'visível' para todos
+        allowNull: false
+      },
       dataAvaliacao: { type: DataTypes.DATEONLY, field: "data_avaliacao" },
     },
+    
     {
       tableName: "avaliacoes",
       indexes: [

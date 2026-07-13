@@ -9,6 +9,12 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("meses_3", "meses_6"),
         defaultValue: "meses_3",
       },
+      // Nova coluna de segurança
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // Começa como 'visível' para todos
+        allowNull: false
+      },
     },
     { tableName: "cursos", timestamps: false },
   );

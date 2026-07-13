@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const { sequelize } = require('./models'); // Importa o sequelize do teu index.js
+const cursoRoutes = require('./routes/cursoRoutes');
+const errorMiddleware = require('./middlewares/errorMiddleware');
 
 const app = express();
 
@@ -13,6 +15,9 @@ app.get('/api/health', (req, res) => {
         mensagem: 'Servidor do GREJUDEC a rodar perfeitamente!'
     });
 });
+
+app.use('/api/cursos', cursoRoutes);
+app.use(errorMiddleware);
 
 // Função de conexão com o banco
 async function conexao_bd() {

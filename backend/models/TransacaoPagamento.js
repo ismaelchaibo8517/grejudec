@@ -19,6 +19,12 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.NOW,
         field: "processado_em",
       },
+            // Nova coluna de segurança
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // Começa como 'visível' para todos
+        allowNull: false
+      },
     },
     { tableName: "transacoes_pagamento", timestamps: false },
   );

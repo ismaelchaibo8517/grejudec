@@ -18,6 +18,12 @@ module.exports = (sequelize, DataTypes) => {
       dataNascimento: { type: DataTypes.DATEONLY, field: "data_nascimento" },
       matriculaDoc: { type: DataTypes.STRING(150), field: "matricula_doc" },
       certificado: { type: DataTypes.STRING(150) },
+            // Nova coluna de segurança
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // Começa como 'visível' para todos
+        allowNull: false
+      },
       statusMatricula: {
         type: DataTypes.ENUM("ativo", "trancado", "concluido", "desistente"),
         defaultValue: "ativo",

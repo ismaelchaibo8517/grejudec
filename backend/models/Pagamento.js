@@ -24,6 +24,12 @@ module.exports = (sequelize, DataTypes) => {
       descricao: { type: DataTypes.TEXT },
       urlCheckout: { type: DataTypes.STRING(255), field: "url_checkout" },
       expiraEm: { type: DataTypes.DATE, field: "expira_em" },
+            // Nova coluna de segurança
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // Começa como 'visível' para todos
+        allowNull: false
+      },
     },
     { tableName: "pagamentos", updatedAt: false },
   );
