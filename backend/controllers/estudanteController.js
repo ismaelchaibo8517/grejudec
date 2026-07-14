@@ -2,7 +2,6 @@ const { Estudante } = require("../models");
 const { Op } = require("sequelize"); // Adiciona esta importação para o LIKE funcionar
 const Joi = require("joi");
 
-const Joi = require("joi");
 
 const estudanteSchema = Joi.object({
   nomeCompleto: Joi.string()

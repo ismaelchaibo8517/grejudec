@@ -1,7 +1,6 @@
 const { Disciplina, Curso } = require("../models");
 const Joi = require("joi");
 
-const Joi = require("joi");
 
 const disciplinaSchema = Joi.object({
   nome: Joi.string()
