@@ -7,10 +7,12 @@ const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const materialRoutes = require('./routes/materialRoutes')
 const avalicaoRouter =require('./routes/avaliacaoRoutes')
 const estudanteRouter =require('./routes/estudanteRoutes')
-const professorRouter =require('./routes/professorRoutes')
+const professorRouter =require('./routes/professorRoutes');
+const cookieParser = require('cookie-parser');
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Rota de teste
 app.get('/api/health', (req, res) => {

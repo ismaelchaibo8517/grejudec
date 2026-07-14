@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("admin", "professor", "estudante"),
         defaultValue: "estudante",
       },
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true, // Começa como 'visível' para todos
+        allowNull: false,
+      },
     },
     { tableName: "usuarios", updatedAt: false },
   );
