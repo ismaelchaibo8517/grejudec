@@ -7,6 +7,7 @@ const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const materialRoutes = require('./routes/materialRoutes')
 const avalicaoRouter =require('./routes/avaliacaoRoutes')
 const estudanteRouter =require('./routes/estudanteRoutes')
+const professorRouter =require('./routes/professorRoutes')
 const app = express();
 
 app.use(express.json());
@@ -19,6 +20,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+app.use('/api/professores' , professorRouter)
 app.use('/api/estudantes' , estudanteRouter)
 app.use('/api/avaliacoes' , avalicaoRouter)
 app.use('/api/materias' , materialRoutes)
