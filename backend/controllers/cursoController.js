@@ -7,7 +7,7 @@ const cursoSchema = Joi.object({
   duracao: Joi.string().valid("meses_3", "meses_6").default("meses_3"),
 });
 
-// 1. Criar (Verificar se já existe pelo código)
+// 1. Criar Curso
 exports.criarCurso = async (req, res, next) => {
   try {
     const { error, value } = cursoSchema.validate(req.body);
@@ -17,32 +17,32 @@ exports.criarCurso = async (req, res, next) => {
       return next(err);
     }
 
-    const { nome, codigo, duracao } = value;
+    const { codigo } = value;
 
-    // Verificação: O código já existe?
+    // Verificação: O código já existe? (Mantemos a verificação de existência)
     const cursoExistente = await Curso.findOne({ where: { codigo } });
     if (cursoExistente) {
       const err = new Error("Já existe um curso registrado com este código.");
-      err.status = 409; // 409 Conflict
+      err.status = 409;
       return next(err);
     }
 
-    const novoCurso = await Curso.create({ nome, codigo, duracao });
+    const novoCurso = await Curso.create(value);
     return res.status(201).json(novoCurso);
   } catch (error) {
     return next(error);
   }
 };
 
-// 2. Atualizar (Verificar se o ID existe)
+// 2. Atualizar Curso
 exports.atualizarCurso = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Verificação: O ID existe?
-    const curso = await Curso.findByPk(id);
+    // SEGURANÇA: Só atualizamos se o curso existir e estiver ativo
+    const curso = await Curso.findOne({ where: { id, ativo: true } });
     if (!curso) {
-      const err = new Error("Curso não encontrado.");
+      const err = new Error("Curso não encontrado ou inativo.");
       err.status = 404;
       return next(err);
     }
@@ -61,30 +61,32 @@ exports.atualizarCurso = async (req, res, next) => {
   }
 };
 
-// 3. Deletar (Verificar se o ID existe)
+// 3. Deletar (Soft Delete - Agora usa update)
 exports.deletarCurso = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Verificação: O ID existe?
-    const curso = await Curso.findByPk(id);
+    // SEGURANÇA: Só deletamos o que está ativo
+    const curso = await Curso.findOne({ where: { id, ativo: true } });
     if (!curso) {
-      const err = new Error("Curso não encontrado para exclusão.");
+      const err = new Error("Curso não encontrado ou já removido.");
       err.status = 404;
       return next(err);
     }
 
-    await curso.destroy();
+    // Soft Delete: Em vez de destroy(), usamos update
+    await curso.update({ ativo: false });
     return res.status(200).json({ mensagem: "Curso removido com sucesso" });
   } catch (error) {
     return next(error);
   }
 };
 
-// 4. Listar (Não precisa de verificação, apenas retorna vazio se não houver)
+// 4. Listar
 exports.listarCursos = async (req, res, next) => {
   try {
-    const cursos = await Curso.findAll();
+    // SEGURANÇA: Listar apenas os ativos
+    const cursos = await Curso.findAll({ where: { ativo: true } });
     return res.status(200).json(cursos);
   } catch (error) {
     return next(error);

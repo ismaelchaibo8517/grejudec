@@ -1,12 +1,13 @@
-const { Disciplina, Curso } = require("../models"); 
+const { Disciplina, Curso } = require("../models");
 const Joi = require("joi");
 
 const disciplinaSchema = Joi.object({
   nome: Joi.string().min(3).max(100).required(),
   codigo: Joi.string().alphanum().min(3).max(20).required(),
-  cursoId: Joi.number().integer().required() // Agora é obrigatório
+  cursoId: Joi.number().integer().required()
 });
 
+// 1. Criar Disciplina
 exports.criarDisciplina = async (req, res, next) => {
   try {
     const { error, value } = disciplinaSchema.validate(req.body);
@@ -16,15 +17,17 @@ exports.criarDisciplina = async (req, res, next) => {
       return next(err);
     }
 
-    // 1. Verificar se o Curso existe antes de criar a disciplina
-    const cursoExistente = await Curso.findByPk(value.cursoId);
+    // SEGURANÇA: Verificar se o curso existe E está ativo
+    const cursoExistente = await Curso.findOne({ 
+      where: { id: value.cursoId, ativo: true } 
+    });
+    
     if (!cursoExistente) {
-      const err = new Error("Curso não encontrado. Não é possível criar disciplina para um curso inexistente.");
+      const err = new Error("Curso não encontrado ou inativo. Não é possível criar disciplina.");
       err.status = 404;
       return next(err);
     }
 
-    // 2. Criar a disciplina vinculada
     const novaDisciplina = await Disciplina.create(value);
     return res.status(201).json(novaDisciplina);
   } catch (error) {
@@ -32,27 +35,28 @@ exports.criarDisciplina = async (req, res, next) => {
   }
 };
 
+// 2. Listar Disciplinas
 exports.listarDisciplinas = async (req, res, next) => {
   try {
-    // Adicione o 'where' para buscar apenas os registros ativos
+    // Busca apenas as ativas
     const disciplinas = await Disciplina.findAll({ 
       where: { ativo: true } 
     });
-    
-    
     return res.status(200).json(disciplinas);
   } catch (error) {
     return next(error);
   }
 };
 
-// Atualizar
+// 3. Atualizar Disciplina
 exports.atualizarDisciplina = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const disciplina = await Disciplina.findByPk(id);
+    
+    // SEGURANÇA: Só podemos atualizar se a disciplina estiver ativa
+    const disciplina = await Disciplina.findOne({ where: { id, ativo: true } });
     if (!disciplina) {
-      const err = new Error("Disciplina não encontrada.");
+      const err = new Error("Disciplina não encontrada ou inativa.");
       err.status = 404;
       return next(err);
     }
@@ -64,6 +68,16 @@ exports.atualizarDisciplina = async (req, res, next) => {
       return next(err);
     }
 
+    // SEGURANÇA EXTRA: Se o cursoId foi alterado, verificar se o novo curso está ativo
+    if (value.cursoId && value.cursoId !== disciplina.cursoId) {
+      const novoCurso = await Curso.findOne({ where: { id: value.cursoId, ativo: true } });
+      if (!novoCurso) {
+        const err = new Error("O novo curso selecionado não existe ou está inativo.");
+        err.status = 404;
+        return next(err);
+      }
+    }
+
     await disciplina.update(value);
     return res.status(200).json({ mensagem: "Disciplina atualizada com sucesso" });
   } catch (error) {
@@ -71,14 +85,16 @@ exports.atualizarDisciplina = async (req, res, next) => {
   }
 };
 
-// Deletar (Soft Delete)
+// 4. Deletar (Soft Delete)
 exports.deletarDisciplina = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const disciplina = await Disciplina.findByPk(id);
+    
+    // SEGURANÇA: Só deletamos o que ainda está ativo
+    const disciplina = await Disciplina.findOne({ where: { id, ativo: true } });
     
     if (!disciplina) {
-      const err = new Error("Disciplina não encontrada.");
+      const err = new Error("Disciplina não encontrada ou já inativada.");
       err.status = 404;
       return next(err);
     }

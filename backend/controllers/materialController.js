@@ -4,7 +4,7 @@ const Joi = require("joi");
 const materialSchema = Joi.object({
   titulo: Joi.string().min(3).max(150).required(),
   descricao: Joi.string().allow('', null),
-  arquivoUrl: Joi.string().uri().required(), // Ou string().required() se for caminho local
+  arquivoUrl: Joi.string().required(),
   disciplinaId: Joi.number().integer().required(),
 });
 
@@ -18,10 +18,13 @@ exports.criarMaterial = async (req, res, next) => {
       return next(err);
     }
 
-    // Verificar se a disciplina pai existe
-    const disciplina = await Disciplina.findByPk(value.disciplinaId);
+    // SEGURANÇA: Verificar se a disciplina pai existe E está ativa
+    const disciplina = await Disciplina.findOne({ 
+      where: { id: value.disciplinaId, ativo: true } 
+    });
+    
     if (!disciplina) {
-      const err = new Error("Disciplina não encontrada.");
+      const err = new Error("Disciplina não encontrada ou está inativa.");
       err.status = 404;
       return next(err);
     }
@@ -34,12 +37,22 @@ exports.criarMaterial = async (req, res, next) => {
 };
 
 // 2. Listar Materiais de uma Disciplina (Aluno e Docente)
+// Nota: O filtro "ativo: true" já garante a segurança aqui
 exports.listarPorDisciplina = async (req, res, next) => {
   try {
     const { disciplinaId } = req.params;
+    
+    // Verificamos se a disciplina existe e está ativa antes de buscar os materiais
+    const disciplina = await Disciplina.findOne({ where: { id: disciplinaId, ativo: true } });
+    if (!disciplina) {
+        const err = new Error("Disciplina não encontrada ou inativa.");
+        err.status = 404;
+        return next(err);
+    }
+
     const materiais = await MaterialAcademico.findAll({
       where: { disciplinaId, ativo: true },
-      order: [['createdAt', 'DESC']] // Mais recentes primeiro
+      order: [['createdAt', 'DESC']]
     });
     return res.status(200).json(materiais);
   } catch (error) {
@@ -51,9 +64,11 @@ exports.listarPorDisciplina = async (req, res, next) => {
 exports.atualizarMaterial = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const material = await MaterialAcademico.findByPk(id);
+    
+    // SEGURANÇA: Buscar material apenas se ele estiver ativo
+    const material = await MaterialAcademico.findOne({ where: { id, ativo: true } });
     if (!material) {
-      const err = new Error("Material não encontrado.");
+      const err = new Error("Material não encontrado ou inativo.");
       err.status = 404;
       return next(err);
     }
@@ -63,6 +78,16 @@ exports.atualizarMaterial = async (req, res, next) => {
       const err = new Error(error.details.map((d) => d.message).join(', '));
       err.status = 400;
       return next(err);
+    }
+
+    // Se estiver a alterar a disciplinaId, validar a nova disciplina
+    if (value.disciplinaId && value.disciplinaId !== material.disciplinaId) {
+        const novaDisciplina = await Disciplina.findOne({ where: { id: value.disciplinaId, ativo: true } });
+        if (!novaDisciplina) {
+            const err = new Error("Nova disciplina informada não encontrada ou inativa.");
+            err.status = 404;
+            return next(err);
+        }
     }
 
     await material.update(value);
@@ -76,9 +101,11 @@ exports.atualizarMaterial = async (req, res, next) => {
 exports.deletarMaterial = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const material = await MaterialAcademico.findByPk(id);
+    
+    // SEGURANÇA: Só deletamos o que está ativo
+    const material = await MaterialAcademico.findOne({ where: { id, ativo: true } });
     if (!material) {
-      const err = new Error("Material não encontrado.");
+      const err = new Error("Material não encontrado ou já removido.");
       err.status = 404;
       return next(err);
     }
