@@ -5,6 +5,7 @@ const cursoRoutes = require('./routes/cursoRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const materialRoutes = require('./routes/materialRoutes')
+const avalicaoRouter =require('./routes/avaliacaoRoutes')
 const app = express();
 
 app.use(express.json());
@@ -17,7 +18,8 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-app.use('/api/material' , materialRoutes)
+app.use('/api/avaliacoes' , avalicaoRouter)
+app.use('/api/materias' , materialRoutes)
 app.use('/api/cursos', cursoRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
 
