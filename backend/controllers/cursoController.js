@@ -1,10 +1,42 @@
 const { Curso } = require("../models");
 const Joi = require("joi");
 
+const Joi = require("joi");
+
 const cursoSchema = Joi.object({
-  nome: Joi.string().min(3).max(50).required(),
-  codigo: Joi.string().alphanum().min(2).max(10).required(),
-  duracao: Joi.string().valid("meses_3", "meses_6").default("meses_3"),
+  nome: Joi.string()
+    .trim() // Remove espaços acidentais no início/fim
+    .min(3)
+    .max(50)
+    .required()
+    .messages({
+      "string.min": "O nome do curso deve ter pelo menos 3 caracteres.",
+      "string.max": "O nome do curso é demasiado longo (máximo 50 caracteres).",
+      "any.required": "O nome do curso é obrigatório."
+    }),
+
+  codigo: Joi.string()
+    .trim()
+    .alphanum()
+    .uppercase() // Transforma automaticamente em maiúsculas (ex: "info" -> "INFO")
+    .min(2)
+    .max(10)
+    .required()
+    .messages({
+      "string.alphanum": "O código deve conter apenas letras e números.",
+      "string.min": "O código deve ter pelo menos 2 caracteres.",
+      "any.required": "O código do curso é obrigatório."
+    }),
+
+  duracao: Joi.string()
+    .valid("meses_3", "meses_6")
+    .default("meses_3")
+    .messages({
+      "any.only": "A duração selecionada é inválida ."
+    }),
+
+  // Opcional: Se o front-end permitir alterar o status logo na criação
+  ativo: Joi.boolean().default(true)
 });
 
 // 1. Criar Curso

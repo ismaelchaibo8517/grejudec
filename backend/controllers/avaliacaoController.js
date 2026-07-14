@@ -1,13 +1,63 @@
 const { Avaliacao, Disciplina, Estudante } = require("../models");
 const Joi = require("joi");
 
+const Joi = require("joi");
+
 const avaliacaoSchema = Joi.object({
-  tipo: Joi.string().valid("teste", "exame", "recorrencia", "trabalho").required(),
-  nota: Joi.number().min(0).max(100).required(),
-  anoLetivo: Joi.number().integer().required(),
-  dataAvaliacao: Joi.date().iso().required(),
-  disciplinaId: Joi.number().integer().required(),
-  estudanteId: Joi.number().integer().required()
+  tipo: Joi.string()
+    .valid("teste", "exame", "recorrencia", "trabalho")
+    .required()
+    .messages({
+      "any.only": "O tipo de avaliação deve ser: teste, exame, recorrencia ou trabalho.",
+      "any.required": "O tipo de avaliação é obrigatório."
+    }),
+
+  nota: Joi.number()
+    .min(0)
+    .max(100)
+    .precision(2) // Garante apenas 2 casas decimais, evitando erros de arredondamento
+    .required()
+    .messages({
+      "number.min": "A nota não pode ser negativa.",
+      "number.max": "A nota não pode ultrapassar 100%.",
+      "number.base": "A nota deve ser um número válido."
+    }),
+
+  anoLetivo: Joi.number()
+    .integer()
+    .min(2020) // Evita anos absurdos como 1900 ou 5000
+    .max(new Date().getFullYear() + 1) // Limita ao próximo ano
+    .required()
+    .messages({
+      "number.min": "Ano letivo inválido (mínimo 2020).",
+      "number.max": "Ano letivo fora do período permitido."
+    }),
+
+  dataAvaliacao: Joi.date()
+    .iso()
+    .required()
+    .messages({
+      "date.format": "A data deve estar no formato ISO (YYYY-MM-DD).",
+      "any.required": "A data da avaliação é obrigatória."
+    }),
+
+  disciplinaId: Joi.number()
+    .integer()
+    .positive() // Segurança: ID não pode ser zero ou negativo
+    .required()
+    .messages({
+      "number.base": "O ID da disciplina deve ser um número.",
+      "any.required": "A disciplina é obrigatória."
+    }),
+
+  estudanteId: Joi.number()
+    .integer()
+    .positive() // Segurança: ID não pode ser zero ou negativo
+    .required()
+    .messages({
+      "number.base": "O ID do estudante deve ser um número.",
+      "any.required": "O estudante é obrigatório."
+    })
 });
 
 // 1. Criar Avaliação
