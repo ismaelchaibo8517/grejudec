@@ -66,6 +66,10 @@ TransacaoPagamento.belongsTo(Pagamento, { foreignKey: 'pagamento_id' });
 Disciplina.hasMany(MaterialAcademico, { foreignKey: 'disciplina_id' });
 MaterialAcademico.belongsTo(Disciplina, { foreignKey: 'disciplina_id' });
 
+// Exemplo de como associar no teu ficheiro de modelos
+Avaliacao.hasOne(MediaFinal, {   foreignKey: 'estudante_id',   sourceKey: 'estudante_id' });
+MediaFinal.belongsTo(Avaliacao, { foreignKey: 'estudante_id' });
+
 // 4. Exportar tudo
 module.exports = {
     sequelize,

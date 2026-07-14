@@ -1,4 +1,4 @@
-const { Avaliacao, Disciplina, Estudante } = require("../models");
+const { Avaliacao, Disciplina, Estudante , MediaFinal } = require("../models");
 const Joi = require("joi");
 
 
@@ -54,6 +54,38 @@ const avaliacaoSchema = Joi.object({
   })
 });
 
+// 1. Função de cálculo (fora da rota para ser reutilizável)
+const calcularSituacaoDoAluno = (dados) => {
+  const t1 = Number(dados.teste1) || 0;
+  const t2 = Number(dados.teste2) || 0;
+  const t3 = Number(dados.teste3) || 0;
+  const notaExame = dados.exame != null ? Number(dados.exame) : null;
+
+  const mediaFreq = (t1 + t2 + t3) / 3;
+
+  let statusFinal = "";
+  let mediaFinal = null;
+
+  if (mediaFreq < 10) {
+    statusFinal = "Excluído";
+    mediaFinal = mediaFreq;
+  } else {
+    if (notaExame === null) {
+      statusFinal = "Admitido";
+      mediaFinal = mediaFreq;
+    } else {
+      mediaFinal = (mediaFreq + notaExame) / 2;
+      statusFinal = mediaFinal >= 10 ? "Aprovado" : "Reprovado";
+    }
+  }
+
+  return {
+    mediaFrequencia: mediaFreq.toFixed(2),
+    mediaFinal: mediaFinal.toFixed(2),
+    status: statusFinal,
+  };
+};
+
 // 1. Criar ou Atualizar Avaliação (Upsert)
 exports.criarAvaliacao = async (req, res, next) => {
   try {
@@ -85,6 +117,24 @@ exports.criarAvaliacao = async (req, res, next) => {
 
     // Upsert: Cria se não existir, atualiza se já existir
     const [avaliacao, criado] = await Avaliacao.upsert(dadosParaSalvar);
+
+    console.log("Valores recebidos para cálculo:", { 
+    t1: dadosParaSalvar.teste1, 
+    t2: dadosParaSalvar.teste2, 
+    t3: dadosParaSalvar.teste3 
+});
+
+    // --- NOVA PARTE: Calcular e Gravar Média ---
+    const situacao = calcularSituacaoDoAluno(dadosParaSalvar);
+
+    await MediaFinal.upsert({
+      estudante_id: value.estudanteId,
+      disciplina_id: value.disciplinaId,
+      ano_letivo: value.anoLetivo,
+      mediaFrequencia: situacao.mediaFrequencia,
+      mediaFinal: situacao.mediaFinal,
+      status: situacao.status,
+    });
     
     return res.status(200).json({
       mensagem: criado ? "Avaliação criada com sucesso." : "Notas atualizadas com sucesso.",
@@ -174,5 +224,48 @@ exports.atualizarAvaliacao = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
 
-}
+  // 1. Listar Geral (com filtros de estudante/disciplina/ano)
+exports.listarAvaliacoesGeral = async (req, res, next) => {
+  try {
+    const { estudanteId, disciplinaId, anoLetivo } = req.query;
+    
+    // Montar o filtro dinamicamente
+    const where = { ativo: true };
+    if (estudanteId) where.estudante_id = estudanteId;
+    if (disciplinaId) where.disciplina_id = disciplinaId;
+    if (anoLetivo) where.ano_letivo = anoLetivo;
+
+    const avaliacoes = await Avaliacao.findAll({
+      where,
+      include: [{ model: MediaFinal }] // Traz a média e o status automaticamente
+    });
+
+    return res.status(200).json(avaliacoes);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 2. Obter por ID
+exports.obterAvaliacaoPorId = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const avaliacao = await Avaliacao.findOne({
+      where: { id, ativo: true },
+      include: [{ model: MediaFinal }]
+    });
+
+    if (!avaliacao) {
+      return res.status(404).json({ mensagem: "Avaliação não encontrada." });
+    }
+
+    return res.status(200).json(avaliacao);
+  } catch (error) {
+    next(error);
+  }
+};
+
+  
