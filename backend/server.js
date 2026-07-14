@@ -3,7 +3,7 @@ const express = require('express');
 const { sequelize } = require('./models'); // Importa o sequelize do teu index.js
 const cursoRoutes = require('./routes/cursoRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
-
+const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const app = express();
 
 app.use(express.json());
@@ -17,6 +17,8 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/cursos', cursoRoutes);
+app.use('/api/disciplinas', disciplinaRoutes);
+
 app.use(errorMiddleware);
 
 // Função de conexão com o banco

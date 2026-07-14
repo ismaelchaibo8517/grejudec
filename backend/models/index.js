@@ -21,6 +21,7 @@ const Pagamento = require('./Pagamento')(sequelize, DataTypes);
 const TransacaoPagamento = require('./TransacaoPagamento')(sequelize, DataTypes);
 const BaseConhecimento = require('./BaseConhecimento')(sequelize, DataTypes);
 const HistoricoChat = require('./HistoricoChat')(sequelize, DataTypes);
+const MaterialAcademico = require('./MaterialAcademico')(sequelize, DataTypes)
 
 // 3. Relacionamentos
 // Usuários
@@ -60,6 +61,10 @@ Pagamento.belongsTo(Estudante, { foreignKey: 'estudante_id' });
 
 Pagamento.hasMany(TransacaoPagamento, { foreignKey: 'pagamento_id' });
 TransacaoPagamento.belongsTo(Pagamento, { foreignKey: 'pagamento_id' });
+
+// No seu arquivo de associações (index.js)
+Disciplina.hasMany(MaterialAcademico, { foreignKey: 'disciplina_id' });
+MaterialAcademico.belongsTo(Disciplina, { foreignKey: 'disciplina_id' });
 
 // 4. Exportar tudo
 module.exports = {
