@@ -71,5 +71,5 @@ module.exports = {
     sequelize,
     Usuario, Estudante, Professor, Curso, Disciplina, DisciplinaProfessor,
     Avaliacao, MediaFinal, Pagamento, TransacaoPagamento,
-    BaseConhecimento, HistoricoChat
+    BaseConhecimento, HistoricoChat , MaterialAcademico
 };
