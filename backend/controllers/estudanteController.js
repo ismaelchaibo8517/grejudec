@@ -1,4 +1,4 @@
-const { Estudante } = require("../models");
+const { Estudante ,  Curso , Disciplina} = require("../models");
 const { Op } = require("sequelize"); // Adiciona esta importação para o LIKE funcionar
 const Joi = require("joi");
 
@@ -49,11 +49,15 @@ const estudanteSchema = Joi.object({
     .default("ativo")
     .messages({
       "any.only": "Status inválido. Escolha entre: ativo, trancado, concluido ou desistente."
-    })
+    }),
+    cursoId: Joi.number().integer().positive().required().messages({
+    "number.base": "O ID do curso deve ser um número.",
+    "any.required": "O estudante precisa de estar matriculado num curso."
+  })
 });
 
 // 1. Criar Estudante com Matrícula Automática
-// 1. Criar Estudante com Matrícula Automática e Verificação de BI
+// 1. Criar Estudante com Matrícula Automática e Verificação de BI e Curso
 exports.criarEstudante = async (req, res, next) => {
   try {
     const { error, value } = estudanteSchema.validate(req.body);
@@ -63,14 +67,21 @@ exports.criarEstudante = async (req, res, next) => {
       return next(err);
     }
 
-    // --- VERIFICAÇÃO: BI já existe? ---
+    // --- VERIFICAÇÃO 1: BI já existe? ---
     const biExistente = await Estudante.findOne({ where: { numBi: value.numBi } });
     if (biExistente) {
       const err = new Error("Este número de BI já está registrado no sistema.");
-      err.status = 409; // 409 Conflict
+      err.status = 409; 
       return next(err);
     }
-    // ----------------------------------
+
+    // --- VERIFICAÇÃO 2: O Curso existe? ---
+    const curso = await Curso.findOne({ where: { id: value.cursoId, ativo: true } });
+    if (!curso) {
+      const err = new Error("Curso não encontrado ou inativo. Selecione um curso válido.");
+      err.status = 404;
+      return next(err);
+    }
 
     // --- Lógica de Matrícula Automática ---
     const ano = new Date().getFullYear();
@@ -88,10 +99,15 @@ exports.criarEstudante = async (req, res, next) => {
       novoNumeroMatricula = `${ano}.001`;
     }
 
-    value.numeroMatricula = novoNumeroMatricula;
-    // --------------------------------------
+    // --- Montagem do Objeto Final ---
+    // Mapeamos o valor do 'cursoId' recebido para 'curso_id' (nome da coluna no banco)
+    const dadosParaSalvar = {
+      ...value,
+      numeroMatricula: novoNumeroMatricula,
+      curso_id: value.cursoId 
+    };
 
-    const novoEstudante = await Estudante.create(value);
+    const novoEstudante = await Estudante.create(dadosParaSalvar);
     return res.status(201).json(novoEstudante);
   } catch (error) { next(error); }
 };

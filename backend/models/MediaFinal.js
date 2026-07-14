@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     "MediaFinal",
     {
       id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-      anoLetivo: {
+      ano_letivo: {
         type: DataTypes.INTEGER,
         allowNull: false,
         field: "ano_letivo",

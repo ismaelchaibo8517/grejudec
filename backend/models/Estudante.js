@@ -20,6 +20,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         field: "num_bi",
       }, // BI: Número + Letra
+              curso_id: { 
+      type: DataTypes.INTEGER, 
+      allowNull: false,
+      field: 'curso_id' // Garante consistência com o banco
+    },
       telefone: { type: DataTypes.STRING(16) },
       dataNascimento: { type: DataTypes.DATEONLY, field: "data_nascimento" },
       matriculaDoc: { type: DataTypes.STRING(150), field: "matricula_doc" },

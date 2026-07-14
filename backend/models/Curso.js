@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       duracao: {
         type: DataTypes.ENUM("meses_3", "meses_6"),
         defaultValue: "meses_3",
+
       },
       // Nova coluna de segurança
       ativo: {
