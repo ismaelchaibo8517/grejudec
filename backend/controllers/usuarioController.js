@@ -1,12 +1,13 @@
-const { Usuario, Estudante, sequelize } = require("../models");
+const { Usuario, Estudante, sequelize , Curso } = require("../models");
 const bcrypt = require("bcryptjs");
+const { Op } = require("sequelize");
 const Joi = require("joi"); // Lembra-te de ter o joi instalado: npm install joi
 
 // 1. Definimos o Schema de Validação para a Pré-Inscrição
 const preInscricaoSchema = Joi.object({
-  email: Joi.string().email().max(100).required().messages({
+  email: Joi.string().email().max(100).messages({
     "string.email": "Por favor, introduza um email válido.",
-    "any.required": "O email é obrigatório."
+   
   }),
   senha: Joi.string().min(6).max(255).required().messages({
     "string.min": "A senha deve ter no mínimo 6 caracteres.",
@@ -56,15 +57,66 @@ exports.criarUsuario = async (req, res, next) => {
   const t = await sequelize.transaction(); 
   
   try {
-    // 3. Gerar o Número de Matrícula automaticamente
-    const anoAtual = new Date().getFullYear(); 
+    // --- VERIFICAÇÃO 1: O Curso existe? ---
+    const curso = await Curso.findOne({ 
+      where: { id: cursoId, ativo: true }, 
+      transaction: t 
+    });
     
-    // Contamos os estudantes para gerar a sequência (ex: 2026EST0001)
-    const totalEstudantes = await Estudante.count({ transaction: t });
-    const proximoNumero = String(totalEstudantes + 1).padStart(4, "0"); 
+    if (!curso) {
+      await t.rollback();
+      return res.status(404).json({
+        mensagem: "Registo recusado.",
+        erros: ["O curso selecionado não foi encontrado ou está inativo. Selecione um curso válido."]
+      });
+    }
+
+    // --- VERIFICAÇÃO 2: O BI já está registado? ---
+    const biExistente = await Estudante.findOne({ 
+      where: { numBi }, 
+      transaction: t 
+    });
     
-    const numeroMatriculaGenerated = `${anoAtual}EST${proximoNumero}`; 
-    const usernameFinal = numeroMatriculaGenerated; // Matrícula será o nome de usuário
+    if (biExistente) {
+      await t.rollback();
+      return res.status(400).json({
+        mensagem: "Registo recusado.",
+        erros: ["Já existe um estudante cadastrado com este número de BI."]
+      });
+    }
+
+    // --- VERIFICAÇÃO 3: O E-mail já está registado? (Previne o erro no Usuario.create) ---
+    const emailExistente = await Usuario.findOne({ 
+      where: { email }, 
+      transaction: t 
+    });
+    
+    // if (emailExistente) {
+    //   await t.rollback();
+    //   return res.status(400).json({
+    //     mensagem: "Registo recusado.",
+    //     erros: ["Este endereço de e-mail já está associado a outra conta."]
+    //   });
+    // }
+
+    // --- Lógica de Matrícula Automática ---
+    const ano = new Date().getFullYear();
+    const ultimoEstudante = await Estudante.findOne({
+      where: { numeroMatricula: { [Op.like]: `${ano}.%` } },
+      order: [['numeroMatricula', 'DESC']],
+      transaction: t
+    });
+
+    let novoNumeroMatricula;
+    if (ultimoEstudante) {
+      const partes = ultimoEstudante.numeroMatricula.split('.');
+      const sequencia = parseInt(partes[1], 10) + 1;
+      novoNumeroMatricula = `${ano}.${sequencia.toString().padStart(3, '0')}`;
+    } else {
+      novoNumeroMatricula = `${ano}.001`;
+    }
+
+    const usernameFinal = novoNumeroMatricula; // Matrícula será o nome de usuário
 
     // 4. Encriptar a senha
     const senhaHash = await bcrypt.hash(senha, 10);
@@ -79,15 +131,15 @@ exports.criarUsuario = async (req, res, next) => {
 
     // 6. Criar o Estudante na tabela 'estudantes'
     const novoEstudante = await Estudante.create({
-      numeroMatricula: numeroMatriculaGenerated,
+      numeroMatricula: novoNumeroMatricula,
       nomeCompleto,
       numBi,
       curso_id: cursoId,
       classe,
       telefone,
       dataNascimento,
-      ativo: true,
-      statusMatricula: "pre-inscritos"
+      ativo: false,
+      statusMatricula: "pre-inscrito"
     }, { transaction: t });
 
     // Confirma as alterações na BD se tudo correu sem sobressaltos!
@@ -112,7 +164,22 @@ exports.criarUsuario = async (req, res, next) => {
     });
 
   } catch (err) {
-    await t.rollback(); // Se falhar na BD (ex: email duplicado), cancela tudo
+    await t.rollback(); // Se falhar, cancela tudo
+
+    // Se escapar algum outro erro de restrição única do Sequelize
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        mensagem: "Registo recusado.",
+        erros: ["Alguns dos dados fornecidos já estão registados no sistema por outro utilizador."]
+      });
+    }
+
+    // Mantém o log limpo no terminal para te ajudar a debugar caso seja outra coisa
+    console.log("=========================================");
+    console.error("❌ ERRO INTERNO DETECTADO:");
+    console.error(err.parent ? err.parent.detail || err.parent.message : err.message);
+    console.log("=========================================");
+
     next(err);
   }
 };
@@ -149,5 +216,83 @@ exports.obterConfirmacaoPreInscricao = async (req, res, next) => {
 
   } catch (error) {
     next(error);
+  }
+};
+
+
+exports.atualizarUsuario = async (req, res, next) => {
+  // Validar os campos que vieram no body
+  const { error, value } = atualizarUsuarioSchema.validate(req.body, { abortEarly: false });
+
+  if (error) {
+    const errosDetalhados = error.details.map(err => err.message);
+    return res.status(400).json({ 
+      mensagem: "Erro de validação nos dados enviados.", 
+      erros: errosDetalhados 
+    });
+  }
+
+  const { id } = req.params; // ID do Estudante que queremos atualizar
+  const t = await sequelize.transaction();
+
+  try {
+    // 1. Verificar se o estudante existe
+    const estudante = await Estudante.findByPk(id, { transaction: t });
+    if (!estudante) {
+      await t.rollback();
+      return res.status(404).json({ mensagem: "Estudante não encontrado." });
+    }
+
+    // 2. Se foi enviado email ou senha, precisamos de atualizar o registro correspondente em 'usuarios'
+    if (value.email || value.senha) {
+      // Lembramos que o nomeUsuario do estudante é o seu número de matrícula
+      const usuario = await Usuario.findOne({
+        where: { nomeUsuario: estudante.numeroMatricula },
+        transaction: t
+      });
+
+      if (usuario) {
+        const dadosUsuarioUpdates = {};
+        
+        if (value.email) dadosUsuarioUpdates.email = value.email;
+        if (value.senha) {
+          dadosUsuarioUpdates.senhaHash = await bcrypt.hash(value.senha, 10);
+        }
+
+        await usuario.update(dadosUsuarioUpdates, { transaction: t });
+      }
+    }
+
+    // 3. Preparar os dados de atualização da tabela 'estudantes'
+    const dadosEstudanteUpdates = {};
+
+    if (value.nomeCompleto) dadosEstudanteUpdates.nomeCompleto = value.nomeCompleto;
+    if (value.numBi) dadosEstudanteUpdates.numBi = value.numBi;
+    if (value.cursoId) dadosEstudanteUpdates.curso_id = value.cursoId; // Mapeia cursoId para curso_id (BD)
+    if (value.classe) dadosEstudanteUpdates.classe = value.classe;
+    if (value.telefone !== undefined) dadosEstudanteUpdates.telefone = value.telefone;
+    if (value.dataNascimento !== undefined) dadosEstudanteUpdates.dataNascimento = value.dataNascimento;
+    if (value.matriculaDoc !== undefined) dadosEstudanteUpdates.matriculaDoc = value.matriculaDoc;
+    if (value.certificado !== undefined) dadosEstudanteUpdates.certificado = value.certificado;
+    if (value.ativo !== undefined) dadosEstudanteUpdates.ativo = value.ativo;
+    if (value.statusMatricula) dadosEstudanteUpdates.statusMatricula = value.statusMatricula;
+
+    // 4. Salvar as alterações na tabela 'estudantes'
+    await estudante.update(dadosEstudanteUpdates, { transaction: t });
+
+    // Se tudo correu bem, persistimos no banco
+    await t.commit();
+
+    // Buscar o estudante atualizado para retornar na resposta
+    const estudanteAtualizado = await Estudante.findByPk(id);
+
+    return res.status(200).json({
+      mensagem: "Dados atualizados com sucesso!",
+      estudante: estudanteAtualizado
+    });
+
+  } catch (err) {
+    await t.rollback();
+    next(err);
   }
 };

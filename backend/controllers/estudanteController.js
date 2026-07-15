@@ -45,7 +45,7 @@ const estudanteSchema = Joi.object({
     .allow('', null),
 
   statusMatricula: Joi.string()
-    .valid("ativo", "trancado", "concluido", "desistente")
+    .valid("pre-inscrito", "trancado", "concluido", "desistente")
     .default("ativo")
     .messages({
       "any.only": "Status inválido. Escolha entre: ativo, trancado, concluido ou desistente."
@@ -104,7 +104,7 @@ exports.criarEstudante = async (req, res, next) => {
     const dadosParaSalvar = {
       ...value,
       numeroMatricula: novoNumeroMatricula,
-      curso_id: value.cursoId 
+      curso_id: value.cursoId , ativo: true
     };
 
     const novoEstudante = await Estudante.create(dadosParaSalvar);

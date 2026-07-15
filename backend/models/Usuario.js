@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         field: "nome_usuario",
       },
-      email: { type: DataTypes.STRING(100), unique: true, allowNull: false },
+      email: { type: DataTypes.STRING(100), allowNull: false },
       senhaHash: {
         type: DataTypes.STRING(255),
         allowNull: false,

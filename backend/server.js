@@ -8,6 +8,7 @@ const materialRoutes = require('./routes/materialRoutes')
 const avalicaoRouter =require('./routes/avaliacaoRoutes')
 const estudanteRouter =require('./routes/estudanteRoutes')
 const professorRouter =require('./routes/professorRoutes');
+const usuarioRouter = require('./routes/usuariosRouter')
 const cookieParser = require('cookie-parser');
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+app.use('/api/usuarios' , usuarioRouter)
 app.use('/api/professores' , professorRouter)
 app.use('/api/estudantes' , estudanteRouter)
 app.use('/api/avaliacoes' , avalicaoRouter)
