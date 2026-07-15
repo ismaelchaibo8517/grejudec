@@ -28,7 +28,12 @@ exports.login = async (req, res, next) => {
     if (error) {
       const mensagensErro = error.details.map(err => err.message);
       return res.status(400).json({ 
-        mensagem: "Erro no preenchimento dos dados.", 
+        success: false,
+        alert: {
+          type: "error",
+          message: "Erro de Preenchimento",
+          description: "Por favor, corrija os erros de validação antes de avançar."
+        },
         erros: mensagensErro 
       });
     }
@@ -44,7 +49,12 @@ exports.login = async (req, res, next) => {
     // 3. Se o utilizador não existir ou a senha estiver incorreta
     if (!usuario || !(await bcrypt.compare(senha, usuario.senhaHash))) {
       return res.status(401).json({ 
-        mensagem: "Credenciais inválidas. Verifique o Número de Matrícula e a senha." 
+        success: false,
+        alert: {
+          type: "error",
+          message: "Falha na Autenticação",
+          description: "Credenciais inválidas. Verifique o Número de Matrícula e a senha."
+        }
       });
     }
 
@@ -65,7 +75,12 @@ exports.login = async (req, res, next) => {
 
     // 6. Responder ao frontend com os dados úteis
     return res.json({ 
-      mensagem: "Login efetuado com sucesso!", 
+      success: true,
+      alert: {
+        type: "success",
+        message: "Sessão Iniciada",
+        description: "Login efetuado com sucesso!"
+      },
       usuario: {
         id: usuario.id,
         nomeUsuario: usuario.nomeUsuario,
@@ -89,5 +104,12 @@ exports.logout = (req, res) => {
     sameSite: 'lax'
   });
 
-  return res.json({ mensagem: "Logout efetuado com sucesso." });
+  return res.json({ 
+    success: true,
+    alert: {
+      type: "success",
+      message: "Sessão Encerrada",
+      description: "Logout efetuado com sucesso."
+    }
+  });
 };

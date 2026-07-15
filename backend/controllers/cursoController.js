@@ -59,7 +59,16 @@ exports.criarCurso = async (req, res, next) => {
     }
 
     const novoCurso = await Curso.create(value);
-    return res.status(201).json(novoCurso);
+    
+    return res.status(201).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Curso Criado",
+        description: "Curso registrado com sucesso."
+      },
+      novoCurso
+    });
   } catch (error) {
     return next(error);
   }
@@ -86,7 +95,16 @@ exports.atualizarCurso = async (req, res, next) => {
     }
 
     await curso.update(value);
-    return res.status(200).json({ mensagem: "Curso atualizado com sucesso" });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Curso Atualizado",
+        description: "Curso atualizado com sucesso."
+      },
+      curso
+    });
   } catch (error) {
     return next(error);
   }
@@ -107,7 +125,15 @@ exports.deletarCurso = async (req, res, next) => {
 
     // Soft Delete: Em vez de destroy(), usamos update
     await curso.update({ ativo: false });
-    return res.status(200).json({ mensagem: "Curso removido com sucesso" });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Curso Removido",
+        description: "Curso removido com sucesso."
+      }
+    });
   } catch (error) {
     return next(error);
   }

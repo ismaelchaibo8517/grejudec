@@ -20,7 +20,16 @@ exports.criarProfessor = async (req, res, next) => {
       return next(err);
     }
     const novoProfessor = await Professor.create(value);
-    return res.status(201).json(novoProfessor);
+    
+    return res.status(201).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Professor Registrado",
+        description: "Professor registrado com sucesso."
+      },
+      novoProfessor
+    });
   } catch (error) { next(error); }
 };
 
@@ -57,7 +66,16 @@ exports.atualizarProfessor = async (req, res, next) => {
     if (error) return next(new Error(error.details[0].message));
 
     await professor.update(value);
-    return res.status(200).json({ mensagem: "Dados atualizados com sucesso." });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Professor Atualizado",
+        description: "Dados do professor atualizados com sucesso."
+      },
+      professor
+    });
   } catch (error) { next(error); }
 };
 
@@ -69,6 +87,14 @@ exports.deletarProfessor = async (req, res, next) => {
     if (!professor) return next(new Error("Professor não encontrado."));
 
     await professor.update({ ativo: false });
-    return res.status(200).json({ mensagem: "Professor removido com sucesso." });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Professor Removido",
+        description: "Professor removido com sucesso."
+      }
+    });
   } catch (error) { next(error); }
 };

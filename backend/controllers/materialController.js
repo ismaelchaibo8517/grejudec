@@ -30,7 +30,16 @@ exports.criarMaterial = async (req, res, next) => {
     }
 
     const novoMaterial = await MaterialAcademico.create(value);
-    return res.status(201).json(novoMaterial);
+    
+    return res.status(201).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Material Criado",
+        description: "Material académico carregado com sucesso."
+      },
+      novoMaterial
+    });
   } catch (error) {
     return next(error);
   }
@@ -91,7 +100,16 @@ exports.atualizarMaterial = async (req, res, next) => {
     }
 
     await material.update(value);
-    return res.status(200).json({ mensagem: "Material atualizado." });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Material Atualizado",
+        description: "Material académico atualizado com sucesso."
+      },
+      material
+    });
   } catch (error) {
     return next(error);
   }
@@ -111,7 +129,15 @@ exports.deletarMaterial = async (req, res, next) => {
     }
 
     await material.update({ ativo: false });
-    return res.status(200).json({ mensagem: "Material removido." });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Material Removido",
+        description: "Material académico removido com sucesso."
+      }
+    });
   } catch (error) {
     return next(error);
   }

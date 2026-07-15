@@ -7,7 +7,6 @@ const Joi = require("joi"); // Lembra-te de ter o joi instalado: npm install joi
 const preInscricaoSchema = Joi.object({
   email: Joi.string().email().max(100).messages({
     "string.email": "Por favor, introduza um email válido.",
-   
   }),
   senha: Joi.string().min(6).max(255).required().messages({
     "string.min": "A senha deve ter no mínimo 6 caracteres.",
@@ -146,7 +145,12 @@ exports.criarUsuario = async (req, res, next) => {
     await t.commit();
 
     return res.status(201).json({
-      mensagem: "Pré-inscrição realizada com sucesso!",
+      success: true,
+      alert: {
+        type: "success",
+        message: "Pré-inscrição Realizada",
+        description: "Pré-inscrição realizada com sucesso!"
+      },
       usuario: {
         id: novoUsuario.id,
         nomeUsuario: novoUsuario.nomeUsuario,
@@ -287,7 +291,12 @@ exports.atualizarUsuario = async (req, res, next) => {
     const estudanteAtualizado = await Estudante.findByPk(id);
 
     return res.status(200).json({
-      mensagem: "Dados atualizados com sucesso!",
+      success: true,
+      alert: {
+        type: "success",
+        message: "Dados Atualizados",
+        description: "Dados do estudante atualizados com sucesso!"
+      },
       estudante: estudanteAtualizado
     });
 

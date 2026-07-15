@@ -5,7 +5,12 @@ module.exports = (rolesPermitidos) => {
     // Se o utilizador não existe ou o papel dele não está na lista permitida:
     if (!req.usuario || !rolesPermitidos.includes(req.usuario.papel)) {
       return res.status(403).json({ 
-        mensagem: "Acesso negado: você não tem permissão para esta ação." 
+        success: false,
+        alert: {
+          type: "error",
+          message: "Acesso Negado",
+          description: "Acesso negado: você não tem permissão para esta ação." 
+        }
       });
     }
     

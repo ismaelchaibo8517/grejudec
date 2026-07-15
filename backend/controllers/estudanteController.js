@@ -56,7 +56,6 @@ const estudanteSchema = Joi.object({
   })
 });
 
-// 1. Criar Estudante com Matrícula Automática
 // 1. Criar Estudante com Matrícula Automática e Verificação de BI e Curso
 exports.criarEstudante = async (req, res, next) => {
   try {
@@ -108,7 +107,16 @@ exports.criarEstudante = async (req, res, next) => {
     };
 
     const novoEstudante = await Estudante.create(dadosParaSalvar);
-    return res.status(201).json(novoEstudante);
+    
+    return res.status(201).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Estudante Registrado",
+        description: "Estudante matriculado e registrado com sucesso."
+      },
+      novoEstudante
+    });
   } catch (error) { next(error); }
 };
 
@@ -165,9 +173,19 @@ exports.atualizarEstudante = async (req, res, next) => {
     // -----------------------------------------------------------------------------
 
     await estudante.update(value);
-    return res.status(200).json({ mensagem: "Estudante atualizado com sucesso." });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Estudante Atualizado",
+        description: "Dados do estudante atualizados com sucesso."
+      },
+      estudante
+    });
   } catch (error) { next(error); }
 };
+
 // 4. Deletar (Soft Delete)
 exports.deletarEstudante = async (req, res, next) => {
   try {
@@ -177,6 +195,14 @@ exports.deletarEstudante = async (req, res, next) => {
     if (!estudante) return next(new Error("Estudante não encontrado."));
 
     await estudante.update({ ativo: false });
-    return res.status(200).json({ mensagem: "Estudante removido com sucesso." });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Estudante Removido",
+        description: "Estudante removido com sucesso."
+      }
+    });
   } catch (error) { next(error); }
 };

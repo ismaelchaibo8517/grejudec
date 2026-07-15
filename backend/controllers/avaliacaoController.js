@@ -119,10 +119,10 @@ exports.criarAvaliacao = async (req, res, next) => {
     const [avaliacao, criado] = await Avaliacao.upsert(dadosParaSalvar);
 
     console.log("Valores recebidos para cálculo:", { 
-    t1: dadosParaSalvar.teste1, 
-    t2: dadosParaSalvar.teste2, 
-    t3: dadosParaSalvar.teste3 
-});
+      t1: dadosParaSalvar.teste1, 
+      t2: dadosParaSalvar.teste2, 
+      t3: dadosParaSalvar.teste3 
+    });
 
     // --- NOVA PARTE: Calcular e Gravar Média ---
     const situacao = calcularSituacaoDoAluno(dadosParaSalvar);
@@ -137,7 +137,12 @@ exports.criarAvaliacao = async (req, res, next) => {
     });
     
     return res.status(200).json({
-      mensagem: criado ? "Avaliação criada com sucesso." : "Notas atualizadas com sucesso.",
+      success: true,
+      alert: {
+        type: "success",
+        message: criado ? "Avaliação Criada" : "Avaliação Atualizada",
+        description: criado ? "Avaliação criada com sucesso." : "Notas atualizadas com sucesso."
+      },
       avaliacao
     });
   } catch (error) {
@@ -169,7 +174,14 @@ exports.deletarAvaliacao = async (req, res, next) => {
     if (!avaliacao) return next(new Error("Avaliação não encontrada."));
 
     await avaliacao.update({ ativo: false });
-    return res.status(200).json({ mensagem: "Avaliação removida." });
+    return res.status(200).json({ 
+      success: true,
+      alert: {
+        type: "success",
+        message: "Avaliação Removida",
+        description: "Avaliação removida."
+      }
+    });
   } catch (error) { next(error); }
 };
 
@@ -217,7 +229,12 @@ exports.atualizarAvaliacao = async (req, res, next) => {
     await avaliacao.update(dadosParaAtualizar);
     
     return res.status(200).json({ 
-      mensagem: "Avaliação atualizada com sucesso.",
+      success: true,
+      alert: {
+        type: "success",
+        message: "Avaliação Atualizada",
+        description: "Avaliação atualizada com sucesso."
+      },
       avaliacao // Retorna o objeto para veres as alterações
     });
     
@@ -259,7 +276,14 @@ exports.obterAvaliacaoPorId = async (req, res, next) => {
     });
 
     if (!avaliacao) {
-      return res.status(404).json({ mensagem: "Avaliação não encontrada." });
+      return res.status(404).json({ 
+        success: false,
+        alert: {
+          type: "error",
+          message: "Não Encontrado",
+          description: "Avaliação não encontrada."
+        }
+      });
     }
 
     return res.status(200).json(avaliacao);
@@ -267,5 +291,3 @@ exports.obterAvaliacaoPorId = async (req, res, next) => {
     next(error);
   }
 };
-
-  

@@ -60,7 +60,16 @@ exports.criarDisciplina = async (req, res, next) => {
     }
 
     const novaDisciplina = await Disciplina.create(value);
-    return res.status(201).json(novaDisciplina);
+    
+    return res.status(201).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Disciplina Criada",
+        description: "Disciplina registrada com sucesso."
+      },
+      novaDisciplina
+    });
   } catch (error) {
     return next(error);
   }
@@ -132,7 +141,16 @@ exports.atualizarDisciplina = async (req, res, next) => {
     }
 
     await disciplina.update(value);
-    return res.status(200).json({ mensagem: "Disciplina atualizada com sucesso" });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Disciplina Atualizada",
+        description: "Disciplina atualizada com sucesso."
+      },
+      disciplina
+    });
   } catch (error) {
     return next(error);
   }
@@ -153,7 +171,15 @@ exports.deletarDisciplina = async (req, res, next) => {
     }
 
     await disciplina.update({ ativo: false });
-    return res.status(200).json({ mensagem: "Disciplina removida com sucesso." });
+    
+    return res.status(200).json({
+      success: true,
+      alert: {
+        type: "success",
+        message: "Disciplina Removida",
+        description: "Disciplina removida com sucesso."
+      }
+    });
   } catch (error) {
     return next(error);
   }
