@@ -1,8 +1,1 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Podes adicionar estilos globais personalizados aqui em baixo se necessário, por exemplo: */
-body {
-  @apply bg-slate-50 text-slate-900 antialiased;
-}
+@import "tailwindcss";

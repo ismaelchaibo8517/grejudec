@@ -1,4 +1,4 @@
-const { Avaliacao, Disciplina, Estudante , MediaFinal } = require("../models");
+const { Avaliacao, Disciplina, Estudante , DisciplinaProfessor, MediaFinal } = require("../models");
 const Joi = require("joi");
 
 
@@ -291,3 +291,5 @@ exports.obterAvaliacaoPorId = async (req, res, next) => {
     next(error);
   }
 };
+
+

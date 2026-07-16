@@ -206,3 +206,42 @@ exports.deletarEstudante = async (req, res, next) => {
     });
   } catch (error) { next(error); }
 };
+
+
+exports.listarEstudantes = async (req, res, next) => {
+  try {
+    const { disciplinaId } = req.query;
+    let whereClause = { ativo: true };
+
+    // Se o frontend enviar o disciplinaId, filtramos pelo curso correspondente
+    if (disciplinaId) {
+      const disciplina = await Disciplina.findOne({ 
+        where: { id: disciplinaId, ativo: true } 
+      });
+
+      if (!disciplina) {
+        const err = new Error("Disciplina não encontrada.");
+        err.status = 404;
+        return next(err);
+      }
+
+      // Adiciona o filtro do curso à busca de estudantes
+      // (Assume que Estudante tem uma coluna curso_id ou similar)
+      if (disciplina.curso_id) {
+        whereClause.curso_id = disciplina.curso_id;
+      }
+    }
+
+    // Busca todos os estudantes que correspondem aos critérios
+    const estudantes = await Estudante.findAll({
+      where: whereClause,
+      attributes: ['id', 'nomeCompleto', 'numeroMatricula', 'curso_id'], // Retorna apenas o necessário
+      order: [['nomeCompleto', 'ASC']] // Ordena por ordem alfabética para facilitar a pauta
+    });
+
+    return res.status(200).json(estudantes);
+  } catch (error) {
+    console.error("Erro ao listar estudantes:", error);
+    next(error);
+  }
+};

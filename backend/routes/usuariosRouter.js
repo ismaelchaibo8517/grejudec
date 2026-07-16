@@ -16,4 +16,16 @@ router.post("/pre-inscricao", usuarioController.criarUsuario);
 router.post("/login", authController.login);
 router.post("/logout", authController.logout);
 
+// Exemplo de rota GET /api/usuarios/me
+router.get("/me", authMiddleware, (req, res) => {
+  return res.json({
+    success: true,
+    usuario: {
+      id: req.usuario.id,
+      nomeUsuario: req.usuario.nomeUsuario,
+      papel: req.usuario.papel
+    }
+  });
+});
+
 module.exports = router;

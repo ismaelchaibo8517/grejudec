@@ -1,16 +1,26 @@
 require('dotenv').config();
 const express = require('express');
-const { sequelize } = require('./models'); // Importa o sequelize do teu index.js
+const cors = require('cors'); // 1. Importa o pacote CORS
+const { sequelize } = require('./models'); 
 const cursoRoutes = require('./routes/cursoRoutes');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 const disciplinaRoutes = require('./routes/disciplinaRoutes');
-const materialRoutes = require('./routes/materialRoutes')
-const avalicaoRouter =require('./routes/avaliacaoRoutes')
-const estudanteRouter =require('./routes/estudanteRoutes')
-const professorRouter =require('./routes/professorRoutes');
-const usuarioRouter = require('./routes/usuariosRouter')
+const materialRoutes = require('./routes/materialRoutes');
+const avalicaoRouter = require('./routes/avaliacaoRoutes');
+const estudanteRouter = require('./routes/estudanteRoutes');
+const professorRouter = require('./routes/professorRoutes');
+const usuarioRouter = require('./routes/usuariosRouter');
 const cookieParser = require('cookie-parser');
+
 const app = express();
+
+// 2. Configura o CORS antes de qualquer rota ou parser!
+app.use(cors({
+  origin: 'http://localhost:5173', // O endereço exato do teu frontend Vite
+  credentials: true,               // Permite o envio automático de cookies (essencial para as tuas rotas)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -23,11 +33,11 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-app.use('/api/usuarios' , usuarioRouter)
-app.use('/api/professores' , professorRouter)
-app.use('/api/estudantes' , estudanteRouter)
-app.use('/api/avaliacoes' , avalicaoRouter)
-app.use('/api/materias' , materialRoutes)
+app.use('/api/usuarios', usuarioRouter);
+app.use('/api/professores', professorRouter);
+app.use('/api/estudantes', estudanteRouter);
+app.use('/api/avaliacoes', avalicaoRouter);
+app.use('/api/materias', materialRoutes);
 app.use('/api/cursos', cursoRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
 
@@ -44,7 +54,7 @@ async function conexao_bd() {
         console.log('Tabelas sincronizadas/criadas com sucesso! ✅');
     } catch (error) {
         console.error('Erro ao conectar ao banco:', error);
-        process.exit(1); // Finaliza o processo se o banco falhar
+        process.exit(1); 
     }
 }
 
@@ -52,7 +62,7 @@ const PORT = process.env.PORT || 3000;
 
 // Inicialização Assíncrona
 async function startServer() {
-    await conexao_bd(); // Aguarda a conexão do banco primeiro
+    await conexao_bd(); 
 
     app.listen(PORT, () => {
         console.log(`🚀 [GREJUDEC] Servidor ativo em: http://localhost:${PORT}`);

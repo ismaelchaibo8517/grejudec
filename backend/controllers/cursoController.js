@@ -1,3 +1,4 @@
+// C:\Users\administrator\Documents\js\grejudec\backend\controllers\cursoController.js
 const { Curso } = require("../models");
 const Joi = require("joi");
 

@@ -1,3 +1,4 @@
+// C:\Users\administrator\Documents\js\grejudec\backend\models\index.js
 require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 
@@ -21,30 +22,51 @@ const Pagamento = require('./Pagamento')(sequelize, DataTypes);
 const TransacaoPagamento = require('./TransacaoPagamento')(sequelize, DataTypes);
 const BaseConhecimento = require('./BaseConhecimento')(sequelize, DataTypes);
 const HistoricoChat = require('./HistoricoChat')(sequelize, DataTypes);
-const MaterialAcademico = require('./MaterialAcademico')(sequelize, DataTypes)
+const MaterialAcademico = require('./MaterialAcademico')(sequelize, DataTypes);
 
 // 3. Relacionamentos
-// Usuários
-Usuario.hasOne(Estudante, { foreignKey: 'usuario_id' });
-Estudante.belongsTo(Usuario, { foreignKey: 'usuario_id' });
 
-Usuario.hasOne(Professor, { foreignKey: 'usuario_id' });
-Professor.belongsTo(Usuario, { foreignKey: 'usuario_id' });
+// --- Usuários ---
+// Adicionados aliases ('as') para permitir buscas limpas e explícitas
+Usuario.hasOne(Estudante, { foreignKey: 'usuario_id', as: 'estudante' });
+Estudante.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
 
-// Cursos
+Usuario.hasOne(Professor, { foreignKey: 'usuario_id', as: 'professor' });
+Professor.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' }); // 👈 Essencial para achar o usuarioProfessor!
+
+// --- Cursos ---
 Curso.hasMany(Estudante, { foreignKey: 'curso_id' });
 Estudante.belongsTo(Curso, { foreignKey: 'curso_id' });
 
 Curso.hasMany(Disciplina, { foreignKey: 'curso_id' });
 Disciplina.belongsTo(Curso, { foreignKey: 'curso_id' });
 
-// Professores x Disciplinas
-Disciplina.belongsToMany(Professor, { through: DisciplinaProfessor, foreignKey: 'disciplina_id' });
-Professor.belongsToMany(Disciplina, { through: DisciplinaProfessor, foreignKey: 'professor_id' });
+// --- Professores x Disciplinas (Muitos-para-Muitos) ---
+// Mudado de volta para camelCase para respeitar os atributos do JS no DisciplinaProfessor.js
+Disciplina.belongsToMany(Professor, { 
+  through: DisciplinaProfessor, 
+  foreignKey: 'disciplinaId', 
+  otherKey: 'professorId', 
+  as: 'professores' 
+});
 
-// Avaliações
+Professor.belongsToMany(Disciplina, { 
+  through: DisciplinaProfessor, 
+  foreignKey: 'professorId', 
+  otherKey: 'disciplinaId', 
+  as: 'disciplinas' 
+});
+// --- Avaliações ---
 Estudante.hasMany(Avaliacao, { foreignKey: 'estudante_id' });
 Avaliacao.belongsTo(Estudante, { foreignKey: 'estudante_id' });
+
+// --- Adiciona isto para permitir o include no DisciplinaProfessor ---
+DisciplinaProfessor.belongsTo(Disciplina, { foreignKey: 'disciplinaId' });
+Disciplina.hasMany(DisciplinaProfessor, { foreignKey: 'disciplinaId' });
+
+DisciplinaProfessor.belongsTo(Professor, { foreignKey: 'professorId' });
+Professor.hasMany(DisciplinaProfessor, { foreignKey: 'professorId' });
+
 
 Disciplina.hasMany(Avaliacao, { foreignKey: 'disciplina_id' });
 Avaliacao.belongsTo(Disciplina, { foreignKey: 'disciplina_id' });
@@ -55,25 +77,35 @@ MediaFinal.belongsTo(Estudante, { foreignKey: 'estudante_id' });
 Disciplina.hasMany(MediaFinal, { foreignKey: 'disciplina_id' });
 MediaFinal.belongsTo(Disciplina, { foreignKey: 'disciplina_id' });
 
-// Financeiro
+// --- Financeiro ---
 Estudante.hasMany(Pagamento, { foreignKey: 'estudante_id' });
 Pagamento.belongsTo(Estudante, { foreignKey: 'estudante_id' });
 
 Pagamento.hasMany(TransacaoPagamento, { foreignKey: 'pagamento_id' });
 TransacaoPagamento.belongsTo(Pagamento, { foreignKey: 'pagamento_id' });
 
-// No seu arquivo de associações (index.js)
+// --- Material Académico ---
 Disciplina.hasMany(MaterialAcademico, { foreignKey: 'disciplina_id' });
 MaterialAcademico.belongsTo(Disciplina, { foreignKey: 'disciplina_id' });
 
-// Exemplo de como associar no teu ficheiro de modelos
-Avaliacao.hasOne(MediaFinal, {   foreignKey: 'estudante_id',   sourceKey: 'estudante_id' });
+// --- Integração de Notas ---
+Avaliacao.hasOne(MediaFinal, { foreignKey: 'estudante_id', sourceKey: 'estudante_id' });
 MediaFinal.belongsTo(Avaliacao, { foreignKey: 'estudante_id' });
 
 // 4. Exportar tudo
 module.exports = {
-    sequelize,
-    Usuario, Estudante, Professor, Curso, Disciplina, DisciplinaProfessor,
-    Avaliacao, MediaFinal, Pagamento, TransacaoPagamento,
-    BaseConhecimento, HistoricoChat , MaterialAcademico
+  sequelize,
+  Usuario, 
+  Estudante, 
+  Professor, 
+  Curso, 
+  Disciplina, 
+  DisciplinaProfessor,
+  Avaliacao, 
+  MediaFinal, 
+  Pagamento, 
+  TransacaoPagamento,
+  BaseConhecimento, 
+  HistoricoChat, 
+  MaterialAcademico
 };

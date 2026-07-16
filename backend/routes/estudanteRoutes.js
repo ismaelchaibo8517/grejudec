@@ -5,9 +5,10 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const checkRole = require('../middlewares/checkRole'); // O novo middleware
 
 router.post('/', authMiddleware, checkRole(['admin', 'professor']), estudanteController.criarEstudante);
-router.get('/', authMiddleware, checkRole(['admin', 'professor' , ]), estudanteController.listarEstudantes);
+// router.get('/', authMiddleware, checkRole(['admin', 'professor' , ]), estudanteController.listarEstudantes);
 router.get('/:id', authMiddleware, checkRole(['admin', 'professor']), estudanteController.obterEstudantePorId);
 router.put('/:id', authMiddleware, checkRole(['admin', 'professor']), estudanteController.atualizarEstudante);
 router.delete('/:id',authMiddleware, checkRole(['admin', 'professor']), estudanteController.deletarEstudante);
-
+// Rota: GET /api/estudantes?disciplinaId=X
+router.get('/', authMiddleware, checkRole(['admin', 'professor']), estudanteController.listarEstudantes);
 module.exports = router;

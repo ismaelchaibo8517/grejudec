@@ -12,6 +12,6 @@ router.delete('/:id',authMiddleware, checkRole(['admin', 'professor']), avaliaca
 router.get("/resultado",authMiddleware, checkRole(['admin', 'professor' , "estudante"]), avaliacaoController.listarAvaliacoesGeral);
 
 // GET por ID: /api/avaliacoes/1
-router.get("/resultado/:id", authMiddleware, checkRole(['admin', 'professor', "estudante"]), avaliacaoController.obterAvaliacaoPorId);
+router.get("/resultado/:id", authMiddleware, checkRole(["estudante"]), avaliacaoController.obterAvaliacaoPorId);
 
 module.exports = router;

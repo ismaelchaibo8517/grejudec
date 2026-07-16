@@ -1,0 +1,32 @@
+/* Animação suave para o dropdown mobile */
+@keyframes menuSlideDown {
+  from {
+    opacity: 0;
+    transform: scaleY(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.animate-menu-open {
+  animation: menuSlideDown 0.25s ease-out forwards;
+}
+
+/* Garante o comportamento correto das margens por conta da Navbar estar fixada no topo */
+body {
+  /* No mobile a navbar é menor (~76px), em desktop um pouco maior (~96px) */
+  padding-top: 76px;
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-top: 96px;
+  }
+}
+
+/* Evita quebras de texto que forcem elementos para fora do ecrã */
+.place-items-center-safe {
+  align-items: center;
+}
