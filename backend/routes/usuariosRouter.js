@@ -23,7 +23,8 @@ router.get("/me", authMiddleware, (req, res) => {
     usuario: {
       id: req.usuario.id,
       nomeUsuario: req.usuario.nomeUsuario,
-      papel: req.usuario.papel
+      papel: req.usuario.papel,
+      email: req.email
     }
   });
 });

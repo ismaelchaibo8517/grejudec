@@ -23,27 +23,27 @@ const avaliacaoSchema = Joi.object({
   }),
 
   // Notas: Mensagens unificadas para facilitar a leitura
-  teste1: Joi.number().min(0).max(20).precision(2).optional().messages({
+  teste1: Joi.number().min(0).max(20).precision(2).allow(null).optional().messages({
     "number.min": "A nota do Teste 1 não pode ser negativa.",
     "number.max": "A nota do Teste 1 deve estar entre 0 e 20.",
     "number.base": "A nota do Teste 1 deve ser um número."
   }),
-  teste2: Joi.number().min(0).max(20).precision(2).optional().messages({
+  teste2: Joi.number().min(0).max(20).precision(2).allow(null).optional().messages({
     "number.min": "A nota do Teste 2 não pode ser negativa.",
     "number.max": "A nota do Teste 2 deve estar entre 0 e 20.",
     "number.base": "A nota do Teste 2 deve ser um número."
   }),
-  teste3: Joi.number().min(0).max(20).precision(2).optional().messages({
+  teste3: Joi.number().min(0).max(20).precision(2).allow(null).optional().messages({
     "number.min": "A nota do Teste 3 não pode ser negativa.",
     "number.max": "A nota do Teste 3 deve estar entre 0 e 20.",
     "number.base": "A nota do Teste 3 deve ser um número."
   }),
-  exame: Joi.number().min(0).max(20).precision(2).optional().messages({
+  exame: Joi.number().min(0).max(20).precision(2).optional().allow(null).messages({
     "number.min": "A nota do Exame não pode ser negativa.",
     "number.max": "A nota do Exame deve estar entre 0 e 20.",
     "number.base": "A nota do Exame deve ser um número."
   }),
-  recorrencia: Joi.number().min(0).max(20).precision(2).optional().messages({
+  recorrencia: Joi.number().min(0).max(20).precision(2).optional().allow(null).messages({
     "number.min": "A nota da Recorrência não pode ser negativa.",
     "number.max": "A nota da Recorrência deve estar entre 0 e 20.",
     "number.base": "A nota da Recorrência deve ser um número."
@@ -90,7 +90,11 @@ const calcularSituacaoDoAluno = (dados) => {
 exports.criarAvaliacao = async (req, res, next) => {
   try {
     const { error, value } = avaliacaoSchema.validate(req.body);
-    if (error) return next(new Error(error.details[0].message));
+if (error) {
+    const err = new Error(error.details[0].message);
+    err.status = 400; // Define explicitamente que o erro é do cliente
+    return next(err); // O teu middleware global deve ler este status
+}
 
     // Verificar se a disciplina e o estudante existem
     const disciplina = await Disciplina.findOne({ where: { id: value.disciplinaId, ativo: true } });
@@ -118,11 +122,11 @@ exports.criarAvaliacao = async (req, res, next) => {
     // Upsert: Cria se não existir, atualiza se já existir
     const [avaliacao, criado] = await Avaliacao.upsert(dadosParaSalvar);
 
-    console.log("Valores recebidos para cálculo:", { 
-      t1: dadosParaSalvar.teste1, 
-      t2: dadosParaSalvar.teste2, 
-      t3: dadosParaSalvar.teste3 
-    });
+    // console.log("Valores recebidos para cálculo:", { 
+    //   t1: dadosParaSalvar.teste1, 
+    //   t2: dadosParaSalvar.teste2, 
+    //   t3: dadosParaSalvar.teste3 
+    // });
 
     // --- NOVA PARTE: Calcular e Gravar Média ---
     const situacao = calcularSituacaoDoAluno(dadosParaSalvar);
@@ -152,17 +156,73 @@ exports.criarAvaliacao = async (req, res, next) => {
   }
 };
 
-// 2. Listar Avaliações (Continua igual)
+
 exports.listarAvaliacoes = async (req, res, next) => {
   try {
     const { disciplinaId, estudanteId } = req.query;
-    const whereClause = { ativo: true };
-    if (disciplinaId) whereClause.disciplina_id = disciplinaId; // Ajustado nome da coluna
-    if (estudanteId) whereClause.estudante_id = estudanteId;   // Ajustado nome da coluna
 
-    const avaliacoes = await Avaliacao.findAll({ where: whereClause });
-    return res.status(200).json(avaliacoes);
-  } catch (error) { next(error); }
+    // 1. Configurar filtros para a busca na tabela Avaliacao
+    const whereClause = { ativo: true };
+    if (disciplinaId) whereClause.disciplina_id = disciplinaId;
+    if (estudanteId) whereClause.estudante_id = estudanteId;
+
+    // 2. Buscar Avaliações com a Disciplina
+    const avaliacoes = await Avaliacao.findAll({
+      where: whereClause,
+      include: [
+        {
+          model: Disciplina,
+          attributes: ['nome']
+        }
+      ],
+      raw: true,
+      nest: true
+    });
+
+    if (!avaliacoes || avaliacoes.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // 3. Configurar filtros para a busca na tabela MediaFinal
+    const whereMedia = {};
+    if (disciplinaId) whereMedia.disciplina_id = disciplinaId;
+    if (estudanteId) whereMedia.estudante_id = estudanteId;
+
+    // 4. Buscar as Médias Finais correspondentes
+    const mediasFinais = await MediaFinal.findAll({
+      where: whereMedia,
+      raw: true
+    });
+
+    // 5. Mesclar e desduplicar os dados
+    const mapa = new Map();
+
+    avaliacoes.forEach(aval => {
+      const mediaCorrespondente = mediasFinais.find(m =>
+        m.estudante_id === aval.estudante_id &&
+        m.disciplina_id === aval.disciplina_id &&
+        m.ano_letivo === aval.ano_letivo
+      );
+
+      const itemCompleto = {
+        ...aval,
+        MediaFinal: mediaCorrespondente ? {
+          mediaFrequencia: mediaCorrespondente.mediaFrequencia,
+          mediaFinal: mediaCorrespondente.mediaFinal,
+          status: mediaCorrespondente.status,
+        } : null
+      };
+
+      // 6. Lógica de desduplicação: mantém apenas o registo mais recente por disciplina
+      if (!mapa.has(aval.disciplina_id) || new Date(aval.updatedAt) > new Date(mapa.get(aval.disciplina_id).updatedAt)) {
+        mapa.set(aval.disciplina_id, itemCompleto);
+      }
+    });
+
+    return res.status(200).json(Array.from(mapa.values()));
+  } catch (error) {
+    next(error);
+  }
 };
 
 // 4. Deletar (Soft Delete)

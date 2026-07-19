@@ -123,9 +123,48 @@ exports.criarEstudante = async (req, res, next) => {
 // 2. Listar Ativos
 exports.listarEstudantes = async (req, res, next) => {
   try {
-    const estudantes = await Estudante.findAll({ where: { ativo: true } });
+    const { disciplinaId } = req.query;
+    let condicaoBusca = { ativo: true };
+
+    // Filtro por disciplina (conforme conversamos antes)
+    if (disciplinaId) {
+      const disciplina = await Disciplina.findByPk(disciplinaId);
+      if (!disciplina) {
+        return res.status(404).json({ 
+          success: false,
+          alert: { type: "error", message: "Disciplina Não Encontrada", description: "A disciplina selecionada não existe." } 
+        });
+      }
+      condicaoBusca.curso_id = disciplina.curso_id;
+    }
+
+    const estudantes = await Estudante.findAll({ 
+      where: condicaoBusca,
+      order: [['nomeCompleto', 'ASC']]
+    });
+
+    // VERIFICAÇÃO CORRETA: Verifica se o array está vazio
+    if (estudantes.length === 0) {
+      console.log("Não existem estudantes para esta busca.");
+      
+      // Retorna 404 com o padrão de alerta para que o frontend mostre a mensagem na tela
+      return res.status(404).json({
+        success: false,
+        alert: { 
+          type: "info", // ou "warning" dependendo do estilo do seu SystemAlert
+          message: "Nenhum Estudante", 
+          description: "Não foram encontrados estudantes ativos para este curso/disciplina." 
+        }
+      });
+    }
+
+    // Se encontrou estudantes, retorna diretamente o array.
+    // O frontend espera um array em resAlunos.data para popular a tabela.
     return res.status(200).json(estudantes);
-  } catch (error) { next(error); }
+    
+  } catch (error) { 
+    next(error); 
+  }
 };
 
 // 2.1. Buscar Estudante por ID
@@ -150,26 +189,52 @@ exports.obterEstudantePorId = async (req, res, next) => {
   }
 };
 
-// 3. Atualizar (Com Verificação de BI para não colidir com outros)
+// 3. Atualizar (Permite atualizar qualquer estudante, ativo ou inativo)
+// 3. Atualizar (Permite atualizar qualquer estudante e força ativo: true se concluído)
 exports.atualizarEstudante = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const estudante = await Estudante.findOne({ where: { id, ativo: true } });
     
-    if (!estudante) return next(new Error("Estudante não encontrado ou inativo."));
+    // Procura o estudante diretamente pelo ID, sem restringir por estado ativo
+    const { Op } = require("sequelize");
+    const estudante = await Estudante.findByPk(id);
+    
+    if (!estudante) {
+      const err = new Error("Estudante não encontrado.");
+      err.status = 404;
+      return next(err);
+    }
 
     const { error, value } = estudanteSchema.validate(req.body, { abortEarly: false });
-    if (error) return next(new Error(error.details[0].message));
+   if (error) {
+    const err = new Error(error.details[0].message);
+    err.status = 400; // Define explicitamente que o erro é do cliente
+    return next(err); // O teu middleware global deve ler este status
+}
 
-    // --- VERIFICAÇÃO: Se mudar o BI, verifique se não pertence a outro estudante ---
+    // --- VERIFICAÇÃO: Se mudar o BI, garante que não colide com outro estudante ---
     if (value.numBi && value.numBi !== estudante.numBi) {
-      const biOcupado = await Estudante.findOne({ where: { numBi: value.numBi } });
+      const biOcupado = await Estudante.findOne({ 
+        where: { 
+          numBi: value.numBi,
+          id: { [Op.ne]: id } // Garante que não é o próprio estudante
+        } 
+      });
+      
       if (biOcupado) {
         const err = new Error("Este número de BI já está sendo usado por outro estudante.");
         err.status = 409;
         return next(err);
       }
     }
+    // -----------------------------------------------------------------------------
+
+    // --- LÓGICA AUTOMÁTICA: Se a matrícula for concluída, força ativo como true ---
+    if (value.statusMatricula === "concluido") {
+      value.ativo = true;
+    }
+
+    console.log("passei: " , value)
     // -----------------------------------------------------------------------------
 
     await estudante.update(value);
@@ -183,9 +248,10 @@ exports.atualizarEstudante = async (req, res, next) => {
       },
       estudante
     });
-  } catch (error) { next(error); }
+  } catch (error) { 
+    next(error); 
+  }
 };
-
 // 4. Deletar (Soft Delete)
 exports.deletarEstudante = async (req, res, next) => {
   try {
@@ -207,41 +273,53 @@ exports.deletarEstudante = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-
-exports.listarEstudantes = async (req, res, next) => {
+exports.listarEstudantesall = async (req, res, next) => {
   try {
-    const { disciplinaId } = req.query;
-    let whereClause = { ativo: true };
-
-    // Se o frontend enviar o disciplinaId, filtramos pelo curso correspondente
-    if (disciplinaId) {
-      const disciplina = await Disciplina.findOne({ 
-        where: { id: disciplinaId, ativo: true } 
-      });
-
-      if (!disciplina) {
-        const err = new Error("Disciplina não encontrada.");
-        err.status = 404;
-        return next(err);
-      }
-
-      // Adiciona o filtro do curso à busca de estudantes
-      // (Assume que Estudante tem uma coluna curso_id ou similar)
-      if (disciplina.curso_id) {
-        whereClause.curso_id = disciplina.curso_id;
-      }
-    }
-
-    // Busca todos os estudantes que correspondem aos critérios
-    const estudantes = await Estudante.findAll({
-      where: whereClause,
-      attributes: ['id', 'nomeCompleto', 'numeroMatricula', 'curso_id'], // Retorna apenas o necessário
-      order: [['nomeCompleto', 'ASC']] // Ordena por ordem alfabética para facilitar a pauta
-    });
+    // Buscamos absolutamente todos os estudantes cadastrados na base de dados, sem exceções
+    const estudantes = await Estudante.findAll();
 
     return res.status(200).json(estudantes);
   } catch (error) {
-    console.error("Erro ao listar estudantes:", error);
+    console.error("Erro ao listar todos os estudantes:", error);
     next(error);
   }
+};
+
+
+// 1. Ver Notas do Próprio Estudante
+exports.verMinhasNotas = async (req, res, next) => {
+  try {
+    // Busca o estudante associado ao usuário logado
+    const estudante = await Estudante.findOne({ where: { usuario_id: req.user.id } });
+    if (!estudante) return res.status(404).json({ message: "Perfil de estudante não encontrado." });
+
+    const notas = await Avaliacao.findAll({
+      where: { estudante_id: estudante.id },
+      include: [{ model: Disciplina, attributes: ['nome'] }]
+    });
+
+    return res.status(200).json(notas);
+  } catch (error) { next(error); }
+};
+
+// 2. Atualizar E-mail e Senha
+exports.atualizarPerfil = async (req, res, next) => {
+  try {
+    const { email, senhaAtual, novaSenha } = req.body;
+    const usuario = await Usuario.findByPk(req.user.id);
+
+    // Atualizar Email se enviado
+    if (email) usuario.email = email;
+
+    // Atualizar Senha se enviada
+    if (novaSenha) {
+      const senhaValida = await bcrypt.compare(senhaAtual, usuario.senhaHash);
+      if (!senhaValida) return res.status(401).json({ message: "Senha atual incorreta." });
+      
+      usuario.senhaHash = await bcrypt.hash(novaSenha, 10);
+    }
+
+    await usuario.save();
+    return res.status(200).json({ success: true, message: "Perfil atualizado com sucesso!" });
+  } catch (error) { next(error); }
 };

@@ -214,7 +214,11 @@ exports.atualizarProfessor = async (req, res, next) => {
     }
 
     const { error, value } = professorSchema.validate(req.body);
-    if (error) return next(new Error(error.details[0].message));
+if (error) {
+    const err = new Error(error.details[0].message);
+    err.status = 400; // Define explicitamente que o erro é do cliente
+    return next(err); // O teu middleware global deve ler este status
+}
 
     const { nomeCompleto, especialidade, disciplinasIds } = value;
 

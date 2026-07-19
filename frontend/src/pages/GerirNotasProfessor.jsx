@@ -71,6 +71,9 @@ export default function GerirNotasProfessor() {
             teste3: aval.teste3 !== null ? aval.teste3 : "",
             exame: aval.exame !== null ? aval.exame : "",
             recorrencia: aval.recorrencia !== null ? aval.recorrencia : "",
+            // NOVO: Capturar a média e o status que vêm do GET
+            mediaFrequencia: aval.mediaFrequencia !== null ? aval.mediaFrequencia : "",
+            status: aval.status !== null ? aval.status : ""
           };
         });
 
@@ -97,45 +100,86 @@ export default function GerirNotasProfessor() {
     }));
   };
 
-const salvarNotasAluno = async (estudanteId) => {
-  setAlerta(null);
-  const dados = notasForm[estudanteId] || {};
-  
-  // Payload pronto para o controlador criarAvaliacao
-  const payload = {
-    estudanteId: parseInt(estudanteId, 10),
-    disciplinaId: parseInt(disciplinaSelecionada, 10),
-    anoLetivo: new Date().getFullYear(),
-    teste1: dados.teste1 !== "" && dados.teste1 !== undefined ? parseFloat(dados.teste1) : null,
-    teste2: dados.teste2 !== "" && dados.teste2 !== undefined ? parseFloat(dados.teste2) : null,
-    teste3: dados.teste3 !== "" && dados.teste3 !== undefined ? parseFloat(dados.teste3) : null,
-    exame: dados.exame !== "" && dados.exame !== undefined ? parseFloat(dados.exame) : null,
-    recorrencia: dados.recorrencia !== "" && dados.recorrencia !== undefined ? parseFloat(dados.recorrencia) : null,
-  };
-
-  try {
-    const response = await api.post("/avaliacoes", payload);
+  const salvarNotasAluno = async (estudanteId) => {
+    setAlerta(null);
+    const dados = notasForm[estudanteId] || {};
     
-    // Atualiza o estado inicial para evitar que o botão fique como "Guardar" se não houver mudança
-    setNotasIniciais((prev) => ({
-      ...prev,
-      [estudanteId]: { ...notasForm[estudanteId] }
-    }));
+    // Payload pronto para o controlador criarAvaliacao
+    const payload = {
+      estudanteId: parseInt(estudanteId, 10),
+      disciplinaId: parseInt(disciplinaSelecionada, 10),
+      anoLetivo: new Date().getFullYear(),
+      teste1: dados.teste1 !== "" && dados.teste1 !== null && dados.teste1 !== undefined && !isNaN(parseFloat(dados.teste1)) ? parseFloat(dados.teste1) : null,
+      teste2: dados.teste2 !== "" && dados.teste2 !== null && dados.teste2 !== undefined && !isNaN(parseFloat(dados.teste2)) ? parseFloat(dados.teste2) : null,
+      teste3: dados.teste3 !== "" && dados.teste3 !== null && dados.teste3 !== undefined && !isNaN(parseFloat(dados.teste3)) ? parseFloat(dados.teste3) : null,
+      exame: dados.exame !== "" && dados.exame !== null && dados.exame !== undefined && !isNaN(parseFloat(dados.exame)) ? parseFloat(dados.exame) : null,
+      recorrencia: dados.recorrencia !== "" && dados.recorrencia !== null && dados.recorrencia !== undefined && !isNaN(parseFloat(dados.recorrencia)) ? parseFloat(dados.recorrencia) : null,
+    };
 
-  } catch (err) {
-    tratarErro(err, "Erro ao gravar as notas.");
-  }
-};
+    try {
+      const response = await api.post("/avaliacoes", payload);
+      
+      // NOVO: Fazer um GET rápido apenas para este estudante para descobrir o novo Status e Média calculados pelo backend
+      const resNotasAtualizadas = await api.get(
+        `/avaliacoes?disciplinaId=${disciplinaSelecionada}&estudanteId=${estudanteId}`
+      );
+
+      let novaAvaliacao = { ...notasForm[estudanteId] };
+
+      if (resNotasAtualizadas.data && resNotasAtualizadas.data.length > 0) {
+        const avalBackend = resNotasAtualizadas.data[0];
+        novaAvaliacao = {
+          id: avalBackend.id,
+          teste1: avalBackend.teste1 !== null ? avalBackend.teste1 : "",
+          teste2: avalBackend.teste2 !== null ? avalBackend.teste2 : "",
+          teste3: avalBackend.teste3 !== null ? avalBackend.teste3 : "",
+          exame: avalBackend.exame !== null ? avalBackend.exame : "",
+          recorrencia: avalBackend.recorrencia !== null ? avalBackend.recorrencia : "",
+          mediaFrequencia: avalBackend.mediaFrequencia !== null ? avalBackend.mediaFrequencia : "",
+          status: avalBackend.status !== null ? avalBackend.status : ""
+        };
+      }
+
+      // Atualiza o estado inicial com os dados frescos vindos do backend (incluindo status)
+      setNotasIniciais((prev) => ({
+        ...prev,
+        [estudanteId]: novaAvaliacao
+      }));
+
+      // Garante que o form também tem a versão mais recente
+      setNotasForm((prev) => ({
+        ...prev,
+        [estudanteId]: novaAvaliacao
+      }));
+
+      // Exibir o alerta de sucesso que vem do backend
+      if (response.data && response.data.alert) {
+        setAlerta(response.data.alert);
+      }
+
+    } catch (err) {
+      tratarErro(err, "Erro ao gravar as notas.");
+    }
+  };
 
   // Função centralizada para extrair erros da API
   const tratarErro = (err, mensagemFallback) => {
+    const mensagemJoi = err.response?.data?.message || err.response?.data?.error;
+
     if (err.response && err.response.data && err.response.data.alert) {
       setAlerta(err.response.data.alert);
+    } else if (mensagemJoi) {
+      // Imprime especificamente a mensagem validada pelo Joi no backend
+      setAlerta({
+        type: "error",
+        message: "Erro de Validação",
+        description: mensagemJoi,
+      });
     } else {
       setAlerta({
         type: "error",
         message: "Erro de Comunicação",
-        description: err.response?.data?.message || mensagemFallback,
+        description: mensagemFallback,
       });
     }
   };
@@ -217,6 +261,9 @@ const salvarNotasAluno = async (estudanteId) => {
                   <th className="p-4 font-bold text-center w-24">
                     Recorrência
                   </th>
+                  {/* NOVO: Cabeçalhos para Média e Status */}
+                  <th className="p-4 font-bold text-center w-24">Média Freq.</th>
+                  <th className="p-4 font-bold text-center w-28">Status</th>
                   <th className="p-4 font-bold text-center w-32">Ações</th>
                 </tr>
               </thead>
@@ -224,7 +271,7 @@ const salvarNotasAluno = async (estudanteId) => {
                 {(!alunos || alunos.length === 0) && !carregandoTurma && (
                   <tr>
                     <td
-                      colSpan="8"
+                      colSpan="10"
                       className="p-8 text-center text-slate-400 font-medium"
                     >
                       Não existem estudantes registados para o curso desta
@@ -284,6 +331,28 @@ const salvarNotasAluno = async (estudanteId) => {
                           />
                         </td>
                       ))}
+
+                      {/* NOVO: Exibição da Média de Frequência */}
+                      <td className="p-4 text-center font-bold text-slate-700">
+                        {notasOriginais.mediaFrequencia || "-"}
+                      </td>
+
+                      {/* NOVO: Exibição do Status com cores dinâmicas */}
+                      <td className="p-4 text-center">
+                        {notasOriginais.status ? (
+                          <span className={`px-2 py-1 rounded text-xs font-bold tracking-wide ${
+                            notasOriginais.status === 'Aprovado' || notasOriginais.status === 'Admitido' 
+                              ? 'bg-green-100 text-green-700' 
+                              : notasOriginais.status === 'Reprovado' || notasOriginais.status === 'Excluído'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {notasOriginais.status}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
 
                       <td className="p-4 text-center">
                         <button

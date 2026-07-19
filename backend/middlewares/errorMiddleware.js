@@ -1,6 +1,6 @@
+//C:\Users\administrator\Documents\js\grejudec\backend\middlewares\errorMiddleware.js
 module.exports = (err, req, res, next) => {
-  // 1. Registar o erro no log do servidor (para você depurar)
-  console.error(`[Erro no Sistema]: ${err.stack}`);
+
 
   // 2. Definir o status code (padrão 500 se não especificado)
   const statusCode = err.status || 500;
@@ -27,6 +27,8 @@ module.exports = (err, req, res, next) => {
     tituloErro = 'Conflito de Dados';
   } else if (statusCode >= 500) {
     tituloErro = 'Erro Interno do Servidor';
+      // 1. Registar o erro no log do servidor (para você depurar)
+  console.error(`[Erro no Sistema]: ${err.stack}`);
   }
 
   // 4. Responder no formato ideal para o teu componente React ler diretamente

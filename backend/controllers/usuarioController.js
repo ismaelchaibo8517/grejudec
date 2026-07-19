@@ -44,16 +44,30 @@ exports.criarUsuario = async (req, res, next) => {
       throw err;
     }
 
+    // --- Lógica de Geração Única e Robusta ---
     const ano = new Date().getFullYear();
+    
+    // Busca o maior número em Estudantes e Usuários simultaneamente
     const ultimoEstudante = await Estudante.findOne({
       where: { numeroMatricula: { [Op.like]: `${ano}.%` } },
       order: [['numeroMatricula', 'DESC']],
       transaction: t
     });
 
-    const sequencia = ultimoEstudante ? parseInt(ultimoEstudante.numeroMatricula.split('.')[1], 10) + 1 : 1;
-    const novoNumeroMatricula = `${ano}.${sequencia.toString().padStart(3, '0')}`;
-    console.log("o numero de matricua/nome_usuario atual é: ",novoNumeroMatricula )
+    const ultimoUsuario = await Usuario.findOne({
+      where: { nomeUsuario: { [Op.like]: `${ano}.%` } },
+      order: [['nomeUsuario', 'DESC']],
+      transaction: t
+    });
+
+    const seqEst = ultimoEstudante ? parseInt(ultimoEstudante.numeroMatricula.split('.')[1], 10) : 0;
+    const seqUsu = ultimoUsuario ? parseInt(ultimoUsuario.nomeUsuario.split('.')[1], 10) : 0;
+    
+    const proximaSequencia = Math.max(seqEst, seqUsu) + 1;
+    const novoNumeroMatricula = `${ano}.${proximaSequencia.toString().padStart(3, '0')}`;
+    
+    console.log("Gerado novo número de matrícula único: ", novoNumeroMatricula);
+    // --- Fim da Lógica ---
 
     const senhaHash = await bcrypt.hash(senha, 10);
 
@@ -72,6 +86,7 @@ exports.criarUsuario = async (req, res, next) => {
       classe,
       telefone,
       dataNascimento,
+      usuario_id: novoUsuario.id,
       ativo: false,
       statusMatricula: "pre-inscrito"
     }, { transaction: t });
@@ -87,19 +102,14 @@ exports.criarUsuario = async (req, res, next) => {
 
   } catch (err) {
     await t.rollback();
-
-    // Captura erros específicos do Sequelize (como violação de unique ou not null)
     if (err.name === 'SequelizeUniqueConstraintError' || err.name === 'SequelizeValidationError') {
       const customErr = new Error(err.errors.map(e => e.message).join(", "));
       customErr.status = 400;
       return next(customErr);
     }
-
-    // Se for outro erro, passa o original para o middleware
     next(err);
   }
 };
-
 exports.obterConfirmacaoPreInscricao = async (req, res, next) => {
   try {
     const { matricula } = req.params;
