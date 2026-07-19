@@ -73,7 +73,20 @@ export default function PreInscricao() {
       return;
     }
 
-    // 2. Montar payload de acordo com o teu Schema Joi
+    // 2. Validação do Telefone Moçambicano (+258 8X XXX XXXX ou apenas 8X XXX XXXX)
+    const telefoneLimpo = telefone.replace(/\s+/g, ''); // Remove espaços
+    const regexTelefone = /^(?:\+258)?8[2-7]\d{7}$/; // Valida prefixo opcional e 9 dígitos começando por 82-87
+    if (!regexTelefone.test(telefoneLimpo)) {
+      setAlerta({
+        type: "warning",
+        message: "Número de Telemóvel Inválido",
+        description: "Insere um número de Moçambique válido (Ex: 841234567 ou +258 84 123 4567)."
+      });
+      setEnviando(false);
+      return;
+    }
+
+    // 3. Montar payload de acordo com o teu Schema Joi
     const payload = {
       nomeCompleto: nomeCompleto.trim(),
       email: email.trim() || null,
@@ -81,7 +94,7 @@ export default function PreInscricao() {
       numBi: numBi.trim().toUpperCase(),
       cursoId: parseInt(cursoId, 10),
       classe,
-      telefone: telefone.trim() || null,
+      telefone: telefoneLimpo, // Enviamos o número limpo
       dataNascimento: dataNascimento || null
     };
 
@@ -164,7 +177,7 @@ export default function PreInscricao() {
               </div>
               <div>
                 <span className="text-xs font-bold text-slate-400 uppercase">Contacto</span>
-                <p className="text-slate-800 font-semibold">{estudante.telefone || "N/A"}</p>
+                <p className="text-slate-800 font-semibold">{estudante.telefone}</p>
               </div>
             </div>
           </div>
@@ -244,14 +257,13 @@ export default function PreInscricao() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Email */}
+                {/* Email (Agora Opcional) */}
                 <div>
                   <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Endereço de E-mail *
+                    Endereço de E-mail
                   </label>
                   <input
                     type="email"
-                    required
                     placeholder="exemplo@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -343,13 +355,14 @@ export default function PreInscricao() {
                 </div>
               </div>
 
-              {/* Contacto */}
+              {/* Contacto (Agora Obrigatório) */}
               <div>
                 <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Número de Telemóvel
+                  Número de Telemóvel *
                 </label>
                 <input
                   type="text"
+                  required
                   placeholder="Ex: +258 84 123 4567"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}

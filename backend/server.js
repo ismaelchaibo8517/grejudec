@@ -10,16 +10,31 @@ const avalicaoRouter = require('./routes/avaliacaoRoutes');
 const estudanteRouter = require('./routes/estudanteRoutes');
 const professorRouter = require('./routes/professorRoutes');
 const usuarioRouter = require('./routes/usuariosRouter');
+const pagamentoRouter = require('./routes/pagamentoRoutes')
 const cookieParser = require('cookie-parser');
 
 const app = express();
 
-// 2. Configura o CORS antes de qualquer rota ou parser!
+// Configuração do CORS no seu server.js (ou app.js)
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'https://dinah-ectomorphic-coralie.ngrok-free.dev'
+];
+
 app.use(cors({
-  origin: 'http://localhost:5173', // O endereço exato do teu frontend Vite
-  credentials: true,               // Permite o envio automático de cookies (essencial para as tuas rotas)
+  origin: function (origin, callback) {
+    // Permite requisições sem origin (como ferramentas de API tipo Postman/Insomnia)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado pelo CORS'));
+    }
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-webhook-signature'] // Adicionei o header do webhook aqui
 }));
 
 app.use(express.json());
@@ -40,6 +55,7 @@ app.use('/api/avaliacoes', avalicaoRouter);
 app.use('/api/materias', materialRoutes);
 app.use('/api/cursos', cursoRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
+app.use('/api/pagamentos', pagamentoRouter);
 
 app.use(errorMiddleware);
 

@@ -5,13 +5,13 @@ const Joi = require("joi");
 
 // --- Schemas ---
 const preInscricaoSchema = Joi.object({
-  email: Joi.string().email().max(100).messages({ "string.email": "Por favor, introduza um email válido." }),
+  email: Joi.string().email().max(100).allow("", null).messages({ "string.email": "Por favor, introduza um email válido." }),
   senha: Joi.string().min(6).max(255).required().messages({ "string.min": "A senha deve ter no mínimo 6 caracteres.", "any.required": "A senha é obrigatória." }),
   nomeCompleto: Joi.string().max(150).required().messages({ "any.required": "O nome completo é obrigatório." }),
   numBi: Joi.string().max(20).required().messages({ "any.required": "O número do BI é obrigatório." }),
   cursoId: Joi.number().integer().positive().required().messages({ "any.required": "O curso é obrigatório." }),
   classe: Joi.string().valid("7", "10", "12").required().messages({ "any.only": "A classe selecionada deve ser 7, 10 ou 12.", "any.required": "A classe é obrigatória." }),
-  telefone: Joi.string().max(16).allow("", null).optional(),
+  telefone: Joi.string().max(16).optional(),
   dataNascimento: Joi.date().iso().allow("", null).optional().messages({ "date.format": "A data de nascimento deve estar no formato YYYY-MM-DD." })
 });
 

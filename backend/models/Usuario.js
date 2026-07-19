@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         field: "nome_usuario",
       },
-      email: { type: DataTypes.STRING(100), allowNull: false },
+      email: { type: DataTypes.STRING(100), allowNull: true },
       senhaHash: {
         type: DataTypes.STRING(255),
         allowNull: false,

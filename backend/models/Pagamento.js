@@ -1,3 +1,4 @@
+//C:\Users\administrator\Documents\js\grejudec\backend\models\Pagamento.js
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
     "Pagamento",
@@ -6,6 +7,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
+      },
+      estudanteId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: "estudante_id",
       },
       tipoServico: {
         type: DataTypes.ENUM("matricula", "certificado", "propina"),
@@ -24,11 +30,11 @@ module.exports = (sequelize, DataTypes) => {
       descricao: { type: DataTypes.TEXT },
       urlCheckout: { type: DataTypes.STRING(255), field: "url_checkout" },
       expiraEm: { type: DataTypes.DATE, field: "expira_em" },
-            // Nova coluna de segurança
+      // Nova coluna de segurança
       ativo: {
         type: DataTypes.BOOLEAN,
         defaultValue: true, // Começa como 'visível' para todos
-        allowNull: false
+        allowNull: false,
       },
     },
     { tableName: "pagamentos", updatedAt: false },

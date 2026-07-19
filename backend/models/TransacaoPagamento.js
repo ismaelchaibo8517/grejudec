@@ -1,3 +1,4 @@
+//C:\Users\administrator\Documents\js\grejudec\backend\models\TransacaoPagamento.js
 module.exports = (sequelize, DataTypes) => {
   return sequelize.define(
     "TransacaoPagamento",

@@ -180,12 +180,20 @@ export default function PainelAdmin() {
             <span>📚 Gerir Cursos</span>
           </button>
 
-          {/* NOVO: BOTÃO DE CONEXÃO COM GERIESTUDANTE */}
+          {/* BOTÃO DE CONEXÃO COM GERIESTUDANTE */}
           <button
             onClick={() => navigate("/admin/geriestudante")}
             className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm border border-slate-200 shadow-xs"
           >
             <span>🎓 Gerir Estudantes</span>
+          </button>
+
+          {/* NOVO: BOTÃO DE CONEXÃO COM RELATÓRIO FINANCEIRO / PROPINAS */}
+          <button
+            onClick={() => navigate("/admin/propinas")}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm border border-slate-200 shadow-xs"
+          >
+            <span>📊 Propinas</span>
           </button>
 
           <button

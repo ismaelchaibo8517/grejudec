@@ -14,6 +14,10 @@ import GeriCurso from "./pages/GerirCursos";
 import GeriEstudante from "./pages/GeriEstudante";
 import GerirNotasProfessor from "./pages/GerirNotasProfessor";
 import PainelEstudante from "./pages/PainelEstudante"; // <--- IMPORTAÇÃO DO NOVO PAINEL
+import PagamentosEstudante from "./pages/PagamentosEstudante";
+import RelatorioPropinasAdmin from "./pages/RelatorioPropinasAdmin";
+
+// Dentro do teu Router/Routes:
 
 export default function App() {
   return (
@@ -40,6 +44,9 @@ export default function App() {
 
             {/* Estudante - Agora usando o componente real */}
             <Route path="/estudante" element={<RotaProtegida papeisPermitidos={["estudante"]}><PainelEstudante /></RotaProtegida>} />
+            <Route path="/estudante/pagamentos" element={<PagamentosEstudante />} />
+            <Route path="/admin/propinas" element={<RelatorioPropinasAdmin />} />
+
             
           </Route>
 

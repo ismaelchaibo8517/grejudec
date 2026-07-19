@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const estudanteController = require('../controllers/estudanteController');
 const authMiddleware = require('../middlewares/authMiddleware');
+const pagamentoController = require('../controllers/pagamentoController');
 const checkRole = require('../middlewares/checkRole'); // O novo middleware
 const estudantePainelController = require('../controllers/estudantePainelController')
 
@@ -19,4 +20,5 @@ router.get('/', authMiddleware, checkRole(['admin', 'professor']), estudanteCont
 // O estudante chama estas rotas passando o seu próprio Token JWT
 router.get('/me/notas', authMiddleware, checkRole(['estudante']), estudantePainelController.verMinhasNotas);
 router.put('/me/perfil', authMiddleware, checkRole(['estudante']), estudantePainelController.atualizarPerfil);
+router.get('/me/pagamentos', authMiddleware, pagamentoController.listarPagamentosEstudante);
 module.exports = router;

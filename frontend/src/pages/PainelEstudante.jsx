@@ -81,7 +81,7 @@ export default function PainelEstudante() {
       setAlerta({
         type: "success",
         message: "Sucesso",
-        description: res.data.message || "Perfil atualizado com sucesso!",
+        description: res.data.message || "Perfil updated com sucesso!",
       });
       setPerfil({ ...perfil, senhaAtual: "", novaSenha: "" });
     } catch (err) {
@@ -106,9 +106,19 @@ export default function PainelEstudante() {
             Meu Painel 🎓
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Consulta as tuas qualificações académicas e gere os teus dados de
-            acesso.
+            Consulta as tuas qualificações académicas e gere os teus dados de acesso.
           </p>
+        </div>
+
+        {/* --- BOTÃO DE NAVEGAÇÃO ADICIONADO AQUI --- */}
+        <div className="flex items-center">
+          <button
+            onClick={() => window.location.href = "/estudante/pagamentos"}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl shadow-sm hover:shadow transition-all group w-full md:w-auto justify-center"
+          >
+            <span>Ver Minhas Propinas</span>
+            <span className="transition-transform group-hover:translate-x-1">💳</span>
+          </button>
         </div>
       </div>
 
@@ -231,7 +241,7 @@ export default function PainelEstudante() {
                       colSpan="4"
                       className="py-12 px-6 text-center text-slate-400"
                     >
-                      Nenhuma nota foi lançada para este estudante até ao
+                      Nenhuma nota foi lançada para este estudante até ao do
                       momento.
                     </td>
                   </tr>
